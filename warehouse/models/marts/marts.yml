@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: fct_bookings
+    description: Bookings used for analysis. Excludes negative-price, outlier-price and zero-guest rows.
+    columns:
+      - name: booking_id
+        data_tests: [unique, not_null]
+      - name: arrival_date
+        data_tests: [not_null]
+      - name: nights
+        data_tests:
+          - non_negative
+      - name: adr_eur
+        data_tests:
+          - non_negative
+      - name: lead_time_band
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["0-7 days", "8-30 days", "31-90 days", "91-180 days", "181-365 days", "365+ days"]
+
+  - name: fct_room_nights
+    description: One row per booked night.
+    columns:
+      - name: booking_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_bookings')
+                field: booking_id
+
+  - name: mart_daily_occupancy
+    description: Rooms sold, cancelled and revenue per hotel per night.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [hotel, stay_date]
+
+  - name: mart_monthly_kpis
+    description: Monthly KPIs per hotel by arrival month.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [hotel, arrival_month]
+    columns:
+      - name: cancellation_rate
+        data_tests:
+          - between_zero_and_one
+
+  - name: mart_cancellation_drivers
+    description: Cancellation rate by every booking-time attribute, long format.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [dimension, value]
+    columns:
+      - name: cancellation_rate
+        data_tests:
+          - between_zero_and_one

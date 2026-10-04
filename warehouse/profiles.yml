@@ -1,0 +1,7 @@
+hotel_revenue:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('HOTEL_DUCKDB_PATH', '../data/warehouse.duckdb') }}"
+      threads: 4

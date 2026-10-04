@@ -1,0 +1,1152 @@
+{
+  "period": "arrivals 2017-01-01 to 2017-08-31",
+  "currency": "EUR",
+  "assumptions_base": {
+    "walkaway": 0.2,
+    "resale": 0.3
+  },
+  "eligible_bookings_2017": 36466,
+  "eligible_cancellations_2017": 11590,
+  "eligible_cancelled_revenue_eur_2017": 6037974.1,
+  "chosen_threshold": 0.26,
+  "base_case": {
+    "threshold": 0.26,
+    "flagged": 16303,
+    "flagged_share": 0.4471,
+    "cancellations_caught": 8731,
+    "catch_rate": 0.7533,
+    "gain_eur": 922337.6,
+    "loss_eur": 523534.34,
+    "net_eur": 398803.26
+  },
+  "blanket_deposit_base_case": {
+    "threshold": 0.0,
+    "flagged": 36466,
+    "flagged_share": 1.0,
+    "cancellations_caught": 11590,
+    "catch_rate": 1.0,
+    "gain_eur": 1174080.86,
+    "loss_eur": 1373139.69,
+    "net_eur": -199058.83
+  },
+  "per_hotel_base_case": {
+    "City Hotel": {
+      "threshold": 0.26,
+      "flagged": 11904,
+      "flagged_share": 0.504,
+      "cancellations_caught": 6183,
+      "catch_rate": 0.7871,
+      "gain_eur": 632508.78,
+      "loss_eur": 350305.06,
+      "net_eur": 282203.73
+    },
+    "Resort Hotel": {
+      "threshold": 0.26,
+      "flagged": 4399,
+      "flagged_share": 0.3424,
+      "cancellations_caught": 2548,
+      "catch_rate": 0.6822,
+      "gain_eur": 289828.82,
+      "loss_eur": 173229.28,
+      "net_eur": 116599.53
+    }
+  },
+  "sensitivity": [
+    {
+      "walkaway": 0.05,
+      "resale": 0.0,
+      "threshold_from_2016": 0.12,
+      "net_eur_2017": 982625.42,
+      "blanket_deposit_net_eur_2017": 903813.99
+    },
+    {
+      "walkaway": 0.05,
+      "resale": 0.3,
+      "threshold_from_2016": 0.1,
+      "net_eur_2017": 1085399.32,
+      "blanket_deposit_net_eur_2017": 1050936.1
+    },
+    {
+      "walkaway": 0.05,
+      "resale": 0.6,
+      "threshold_from_2016": 0.06,
+      "net_eur_2017": 1205248.4,
+      "blanket_deposit_net_eur_2017": 1198058.21
+    },
+    {
+      "walkaway": 0.1,
+      "resale": 0.0,
+      "threshold_from_2016": 0.19,
+      "net_eur_2017": 655043.01,
+      "blanket_deposit_net_eur_2017": 340026.91
+    },
+    {
+      "walkaway": 0.1,
+      "resale": 0.3,
+      "threshold_from_2016": 0.12,
+      "net_eur_2017": 776501.99,
+      "blanket_deposit_net_eur_2017": 634271.13
+    },
+    {
+      "walkaway": 0.1,
+      "resale": 0.6,
+      "threshold_from_2016": 0.11,
+      "net_eur_2017": 981057.85,
+      "blanket_deposit_net_eur_2017": 928515.35
+    },
+    {
+      "walkaway": 0.2,
+      "resale": 0.0,
+      "threshold_from_2016": 0.46,
+      "net_eur_2017": 297413.29,
+      "blanket_deposit_net_eur_2017": -787547.26
+    },
+    {
+      "walkaway": 0.2,
+      "resale": 0.3,
+      "threshold_from_2016": 0.26,
+      "net_eur_2017": 398803.26,
+      "blanket_deposit_net_eur_2017": -199058.83
+    },
+    {
+      "walkaway": 0.2,
+      "resale": 0.6,
+      "threshold_from_2016": 0.16,
+      "net_eur_2017": 609982.59,
+      "blanket_deposit_net_eur_2017": 389429.61
+    },
+    {
+      "walkaway": 0.3,
+      "resale": 0.0,
+      "threshold_from_2016": 0.57,
+      "net_eur_2017": 146881.16,
+      "blanket_deposit_net_eur_2017": -1915121.44
+    },
+    {
+      "walkaway": 0.3,
+      "resale": 0.3,
+      "threshold_from_2016": 0.49,
+      "net_eur_2017": 219393.2,
+      "blanket_deposit_net_eur_2017": -1032388.78
+    },
+    {
+      "walkaway": 0.3,
+      "resale": 0.6,
+      "threshold_from_2016": 0.26,
+      "net_eur_2017": 358301.68,
+      "blanket_deposit_net_eur_2017": -149656.12
+    }
+  ],
+  "threshold_curve_base_case": [
+    {
+      "threshold": 0.0,
+      "flagged": 36466,
+      "flagged_share": 1.0,
+      "cancellations_caught": 11590,
+      "catch_rate": 1.0,
+      "gain_eur": 1174080.86,
+      "loss_eur": 1373139.69,
+      "net_eur": -199058.83
+    },
+    {
+      "threshold": 0.01,
+      "flagged": 36466,
+      "flagged_share": 1.0,
+      "cancellations_caught": 11590,
+      "catch_rate": 1.0,
+      "gain_eur": 1174080.86,
+      "loss_eur": 1373139.69,
+      "net_eur": -199058.83
+    },
+    {
+      "threshold": 0.02,
+      "flagged": 36466,
+      "flagged_share": 1.0,
+      "cancellations_caught": 11590,
+      "catch_rate": 1.0,
+      "gain_eur": 1174080.86,
+      "loss_eur": 1373139.69,
+      "net_eur": -199058.83
+    },
+    {
+      "threshold": 0.03,
+      "flagged": 36369,
+      "flagged_share": 0.9973,
+      "cancellations_caught": 11590,
+      "catch_rate": 1.0,
+      "gain_eur": 1174080.86,
+      "loss_eur": 1370849.74,
+      "net_eur": -196768.88
+    },
+    {
+      "threshold": 0.04,
+      "flagged": 35563,
+      "flagged_share": 0.9752,
+      "cancellations_caught": 11574,
+      "catch_rate": 0.9986,
+      "gain_eur": 1173233.02,
+      "loss_eur": 1345280.67,
+      "net_eur": -172047.65
+    },
+    {
+      "threshold": 0.05,
+      "flagged": 34667,
+      "flagged_share": 0.9507,
+      "cancellations_caught": 11536,
+      "catch_rate": 0.9953,
+      "gain_eur": 1171073.04,
+      "loss_eur": 1314043.74,
+      "net_eur": -142970.7
+    },
+    {
+      "threshold": 0.06,
+      "flagged": 33242,
+      "flagged_share": 0.9116,
+      "cancellations_caught": 11481,
+      "catch_rate": 0.9906,
+      "gain_eur": 1167610.74,
+      "loss_eur": 1269025.43,
+      "net_eur": -101414.69
+    },
+    {
+      "threshold": 0.07,
+      "flagged": 31750,
+      "flagged_share": 0.8707,
+      "cancellations_caught": 11402,
+      "catch_rate": 0.9838,
+      "gain_eur": 1161392.66,
+      "loss_eur": 1217648.65,
+      "net_eur": -56255.99
+    },
+    {
+      "threshold": 0.08,
+      "flagged": 30084,
+      "flagged_share": 0.825,
+      "cancellations_caught": 11281,
+      "catch_rate": 0.9733,
+      "gain_eur": 1152026.13,
+      "loss_eur": 1151066.66,
+      "net_eur": 959.47
+    },
+    {
+      "threshold": 0.09,
+      "flagged": 28586,
+      "flagged_share": 0.7839,
+      "cancellations_caught": 11167,
+      "catch_rate": 0.9635,
+      "gain_eur": 1142571.32,
+      "loss_eur": 1086355.12,
+      "net_eur": 56216.2
+    },
+    {
+      "threshold": 0.1,
+      "flagged": 27365,
+      "flagged_share": 0.7504,
+      "cancellations_caught": 11021,
+      "catch_rate": 0.9509,
+      "gain_eur": 1131261.21,
+      "loss_eur": 1031893.45,
+      "net_eur": 99367.76
+    },
+    {
+      "threshold": 0.11,
+      "flagged": 26454,
+      "flagged_share": 0.7254,
+      "cancellations_caught": 10921,
+      "catch_rate": 0.9423,
+      "gain_eur": 1123937.69,
+      "loss_eur": 991802.18,
+      "net_eur": 132135.51
+    },
+    {
+      "threshold": 0.12,
+      "flagged": 25610,
+      "flagged_share": 0.7023,
+      "cancellations_caught": 10793,
+      "catch_rate": 0.9312,
+      "gain_eur": 1114741.59,
+      "loss_eur": 955164.6,
+      "net_eur": 159576.99
+    },
+    {
+      "threshold": 0.13,
+      "flagged": 24574,
+      "flagged_share": 0.6739,
+      "cancellations_caught": 10644,
+      "catch_rate": 0.9184,
+      "gain_eur": 1103275.14,
+      "loss_eur": 910974.62,
+      "net_eur": 192300.52
+    },
+    {
+      "threshold": 0.14,
+      "flagged": 23679,
+      "flagged_share": 0.6493,
+      "cancellations_caught": 10488,
+      "catch_rate": 0.9049,
+      "gain_eur": 1089791.03,
+      "loss_eur": 868464.91,
+      "net_eur": 221326.12
+    },
+    {
+      "threshold": 0.15,
+      "flagged": 22937,
+      "flagged_share": 0.629,
+      "cancellations_caught": 10364,
+      "catch_rate": 0.8942,
+      "gain_eur": 1078659.66,
+      "loss_eur": 829969.65,
+      "net_eur": 248690.01
+    },
+    {
+      "threshold": 0.16,
+      "flagged": 22290,
+      "flagged_share": 0.6113,
+      "cancellations_caught": 10226,
+      "catch_rate": 0.8823,
+      "gain_eur": 1065100.73,
+      "loss_eur": 796456.73,
+      "net_eur": 268643.99
+    },
+    {
+      "threshold": 0.17,
+      "flagged": 21714,
+      "flagged_share": 0.5955,
+      "cancellations_caught": 10106,
+      "catch_rate": 0.872,
+      "gain_eur": 1055142.09,
+      "loss_eur": 766566.12,
+      "net_eur": 288575.96
+    },
+    {
+      "threshold": 0.18,
+      "flagged": 21215,
+      "flagged_share": 0.5818,
+      "cancellations_caught": 10008,
+      "catch_rate": 0.8635,
+      "gain_eur": 1046272.81,
+      "loss_eur": 739293.15,
+      "net_eur": 306979.66
+    },
+    {
+      "threshold": 0.19,
+      "flagged": 20707,
+      "flagged_share": 0.5678,
+      "cancellations_caught": 9879,
+      "catch_rate": 0.8524,
+      "gain_eur": 1035924.61,
+      "loss_eur": 714521.04,
+      "net_eur": 321403.57
+    },
+    {
+      "threshold": 0.2,
+      "flagged": 20280,
+      "flagged_share": 0.5561,
+      "cancellations_caught": 9792,
+      "catch_rate": 0.8449,
+      "gain_eur": 1027478.99,
+      "loss_eur": 691117.65,
+      "net_eur": 336361.34
+    },
+    {
+      "threshold": 0.21,
+      "flagged": 19657,
+      "flagged_share": 0.5391,
+      "cancellations_caught": 9609,
+      "catch_rate": 0.8291,
+      "gain_eur": 1012245.79,
+      "loss_eur": 665851.08,
+      "net_eur": 346394.71
+    },
+    {
+      "threshold": 0.22,
+      "flagged": 19028,
+      "flagged_share": 0.5218,
+      "cancellations_caught": 9482,
+      "catch_rate": 0.8181,
+      "gain_eur": 999023.15,
+      "loss_eur": 636727.62,
+      "net_eur": 362295.53
+    },
+    {
+      "threshold": 0.23,
+      "flagged": 18285,
+      "flagged_share": 0.5014,
+      "cancellations_caught": 9286,
+      "catch_rate": 0.8012,
+      "gain_eur": 980112.62,
+      "loss_eur": 608364.6,
+      "net_eur": 371748.02
+    },
+    {
+      "threshold": 0.24,
+      "flagged": 17568,
+      "flagged_share": 0.4818,
+      "cancellations_caught": 9086,
+      "catch_rate": 0.784,
+      "gain_eur": 959512.93,
+      "loss_eur": 577711.18,
+      "net_eur": 381801.75
+    },
+    {
+      "threshold": 0.25,
+      "flagged": 16893,
+      "flagged_share": 0.4633,
+      "cancellations_caught": 8912,
+      "catch_rate": 0.7689,
+      "gain_eur": 941541.43,
+      "loss_eur": 549353.69,
+      "net_eur": 392187.74
+    },
+    {
+      "threshold": 0.26,
+      "flagged": 16303,
+      "flagged_share": 0.4471,
+      "cancellations_caught": 8731,
+      "catch_rate": 0.7533,
+      "gain_eur": 922337.6,
+      "loss_eur": 523534.34,
+      "net_eur": 398803.26
+    },
+    {
+      "threshold": 0.27,
+      "flagged": 15709,
+      "flagged_share": 0.4308,
+      "cancellations_caught": 8524,
+      "catch_rate": 0.7355,
+      "gain_eur": 901562.75,
+      "loss_eur": 499389.59,
+      "net_eur": 402173.16
+    },
+    {
+      "threshold": 0.28,
+      "flagged": 15133,
+      "flagged_share": 0.415,
+      "cancellations_caught": 8344,
+      "catch_rate": 0.7199,
+      "gain_eur": 881916.35,
+      "loss_eur": 473555.65,
+      "net_eur": 408360.7
+    },
+    {
+      "threshold": 0.29,
+      "flagged": 14545,
+      "flagged_share": 0.3989,
+      "cancellations_caught": 8128,
+      "catch_rate": 0.7013,
+      "gain_eur": 858955.22,
+      "loss_eur": 449537.36,
+      "net_eur": 409417.86
+    },
+    {
+      "threshold": 0.3,
+      "flagged": 13890,
+      "flagged_share": 0.3809,
+      "cancellations_caught": 7904,
+      "catch_rate": 0.682,
+      "gain_eur": 835272.54,
+      "loss_eur": 423476.03,
+      "net_eur": 411796.51
+    },
+    {
+      "threshold": 0.31,
+      "flagged": 13263,
+      "flagged_share": 0.3637,
+      "cancellations_caught": 7671,
+      "catch_rate": 0.6619,
+      "gain_eur": 810432.06,
+      "loss_eur": 397016.34,
+      "net_eur": 413415.72
+    },
+    {
+      "threshold": 0.32,
+      "flagged": 12575,
+      "flagged_share": 0.3448,
+      "cancellations_caught": 7408,
+      "catch_rate": 0.6392,
+      "gain_eur": 782500.91,
+      "loss_eur": 369094.04,
+      "net_eur": 413406.87
+    },
+    {
+      "threshold": 0.33,
+      "flagged": 12014,
+      "flagged_share": 0.3295,
+      "cancellations_caught": 7185,
+      "catch_rate": 0.6199,
+      "gain_eur": 758348.94,
+      "loss_eur": 345975.64,
+      "net_eur": 412373.31
+    },
+    {
+      "threshold": 0.34,
+      "flagged": 11463,
+      "flagged_share": 0.3143,
+      "cancellations_caught": 6952,
+      "catch_rate": 0.5998,
+      "gain_eur": 732637.26,
+      "loss_eur": 323825.52,
+      "net_eur": 408811.74
+    },
+    {
+      "threshold": 0.35,
+      "flagged": 10976,
+      "flagged_share": 0.301,
+      "cancellations_caught": 6719,
+      "catch_rate": 0.5797,
+      "gain_eur": 707128.04,
+      "loss_eur": 305914.35,
+      "net_eur": 401213.69
+    },
+    {
+      "threshold": 0.36,
+      "flagged": 10546,
+      "flagged_share": 0.2892,
+      "cancellations_caught": 6533,
+      "catch_rate": 0.5637,
+      "gain_eur": 686619.82,
+      "loss_eur": 288149.51,
+      "net_eur": 398470.31
+    },
+    {
+      "threshold": 0.37,
+      "flagged": 10212,
+      "flagged_share": 0.28,
+      "cancellations_caught": 6384,
+      "catch_rate": 0.5508,
+      "gain_eur": 670545.67,
+      "loss_eur": 273267.43,
+      "net_eur": 397278.24
+    },
+    {
+      "threshold": 0.38,
+      "flagged": 9757,
+      "flagged_share": 0.2676,
+      "cancellations_caught": 6207,
+      "catch_rate": 0.5355,
+      "gain_eur": 651197.17,
+      "loss_eur": 253324.41,
+      "net_eur": 397872.76
+    },
+    {
+      "threshold": 0.39,
+      "flagged": 9390,
+      "flagged_share": 0.2575,
+      "cancellations_caught": 6010,
+      "catch_rate": 0.5186,
+      "gain_eur": 630279.27,
+      "loss_eur": 239459.79,
+      "net_eur": 390819.49
+    },
+    {
+      "threshold": 0.4,
+      "flagged": 9078,
+      "flagged_share": 0.2489,
+      "cancellations_caught": 5839,
+      "catch_rate": 0.5038,
+      "gain_eur": 614198.96,
+      "loss_eur": 228095.81,
+      "net_eur": 386103.15
+    },
+    {
+      "threshold": 0.41,
+      "flagged": 8797,
+      "flagged_share": 0.2412,
+      "cancellations_caught": 5695,
+      "catch_rate": 0.4914,
+      "gain_eur": 600194.96,
+      "loss_eur": 217961.76,
+      "net_eur": 382233.2
+    },
+    {
+      "threshold": 0.42,
+      "flagged": 8539,
+      "flagged_share": 0.2342,
+      "cancellations_caught": 5557,
+      "catch_rate": 0.4795,
+      "gain_eur": 584785.33,
+      "loss_eur": 207620.0,
+      "net_eur": 377165.33
+    },
+    {
+      "threshold": 0.43,
+      "flagged": 8273,
+      "flagged_share": 0.2269,
+      "cancellations_caught": 5435,
+      "catch_rate": 0.4689,
+      "gain_eur": 571958.15,
+      "loss_eur": 196102.39,
+      "net_eur": 375855.76
+    },
+    {
+      "threshold": 0.44,
+      "flagged": 8052,
+      "flagged_share": 0.2208,
+      "cancellations_caught": 5330,
+      "catch_rate": 0.4599,
+      "gain_eur": 561419.3,
+      "loss_eur": 187135.98,
+      "net_eur": 374283.32
+    },
+    {
+      "threshold": 0.45,
+      "flagged": 7843,
+      "flagged_share": 0.2151,
+      "cancellations_caught": 5229,
+      "catch_rate": 0.4512,
+      "gain_eur": 552375.68,
+      "loss_eur": 178462.65,
+      "net_eur": 373913.03
+    },
+    {
+      "threshold": 0.46,
+      "flagged": 7639,
+      "flagged_share": 0.2095,
+      "cancellations_caught": 5117,
+      "catch_rate": 0.4415,
+      "gain_eur": 541380.57,
+      "loss_eur": 170777.09,
+      "net_eur": 370603.48
+    },
+    {
+      "threshold": 0.47,
+      "flagged": 7446,
+      "flagged_share": 0.2042,
+      "cancellations_caught": 5018,
+      "catch_rate": 0.433,
+      "gain_eur": 531614.0,
+      "loss_eur": 164399.98,
+      "net_eur": 367214.02
+    },
+    {
+      "threshold": 0.48,
+      "flagged": 7251,
+      "flagged_share": 0.1988,
+      "cancellations_caught": 4907,
+      "catch_rate": 0.4234,
+      "gain_eur": 521848.63,
+      "loss_eur": 158412.42,
+      "net_eur": 363436.21
+    },
+    {
+      "threshold": 0.49,
+      "flagged": 7096,
+      "flagged_share": 0.1946,
+      "cancellations_caught": 4817,
+      "catch_rate": 0.4156,
+      "gain_eur": 513141.21,
+      "loss_eur": 153070.24,
+      "net_eur": 360070.97
+    },
+    {
+      "threshold": 0.5,
+      "flagged": 6945,
+      "flagged_share": 0.1905,
+      "cancellations_caught": 4726,
+      "catch_rate": 0.4078,
+      "gain_eur": 505479.18,
+      "loss_eur": 149154.67,
+      "net_eur": 356324.51
+    },
+    {
+      "threshold": 0.51,
+      "flagged": 6779,
+      "flagged_share": 0.1859,
+      "cancellations_caught": 4629,
+      "catch_rate": 0.3994,
+      "gain_eur": 497250.11,
+      "loss_eur": 145035.51,
+      "net_eur": 352214.6
+    },
+    {
+      "threshold": 0.52,
+      "flagged": 6670,
+      "flagged_share": 0.1829,
+      "cancellations_caught": 4563,
+      "catch_rate": 0.3937,
+      "gain_eur": 490662.82,
+      "loss_eur": 142057.51,
+      "net_eur": 348605.31
+    },
+    {
+      "threshold": 0.53,
+      "flagged": 6558,
+      "flagged_share": 0.1798,
+      "cancellations_caught": 4520,
+      "catch_rate": 0.39,
+      "gain_eur": 486836.86,
+      "loss_eur": 137576.42,
+      "net_eur": 349260.45
+    },
+    {
+      "threshold": 0.54,
+      "flagged": 6446,
+      "flagged_share": 0.1768,
+      "cancellations_caught": 4468,
+      "catch_rate": 0.3855,
+      "gain_eur": 482803.11,
+      "loss_eur": 133789.79,
+      "net_eur": 349013.32
+    },
+    {
+      "threshold": 0.55,
+      "flagged": 6324,
+      "flagged_share": 0.1734,
+      "cancellations_caught": 4416,
+      "catch_rate": 0.381,
+      "gain_eur": 478301.58,
+      "loss_eur": 128721.05,
+      "net_eur": 349580.53
+    },
+    {
+      "threshold": 0.56,
+      "flagged": 6211,
+      "flagged_share": 0.1703,
+      "cancellations_caught": 4352,
+      "catch_rate": 0.3755,
+      "gain_eur": 472688.68,
+      "loss_eur": 125036.1,
+      "net_eur": 347652.58
+    },
+    {
+      "threshold": 0.57,
+      "flagged": 6114,
+      "flagged_share": 0.1677,
+      "cancellations_caught": 4294,
+      "catch_rate": 0.3705,
+      "gain_eur": 467285.53,
+      "loss_eur": 122263.72,
+      "net_eur": 345021.81
+    },
+    {
+      "threshold": 0.58,
+      "flagged": 6012,
+      "flagged_share": 0.1649,
+      "cancellations_caught": 4234,
+      "catch_rate": 0.3653,
+      "gain_eur": 462334.94,
+      "loss_eur": 119279.49,
+      "net_eur": 343055.45
+    },
+    {
+      "threshold": 0.59,
+      "flagged": 5921,
+      "flagged_share": 0.1624,
+      "cancellations_caught": 4182,
+      "catch_rate": 0.3608,
+      "gain_eur": 457791.26,
+      "loss_eur": 116912.43,
+      "net_eur": 340878.84
+    },
+    {
+      "threshold": 0.6,
+      "flagged": 5772,
+      "flagged_share": 0.1583,
+      "cancellations_caught": 4088,
+      "catch_rate": 0.3527,
+      "gain_eur": 448344.38,
+      "loss_eur": 113631.97,
+      "net_eur": 334712.42
+    },
+    {
+      "threshold": 0.61,
+      "flagged": 5658,
+      "flagged_share": 0.1552,
+      "cancellations_caught": 4022,
+      "catch_rate": 0.347,
+      "gain_eur": 442020.77,
+      "loss_eur": 110719.33,
+      "net_eur": 331301.44
+    },
+    {
+      "threshold": 0.62,
+      "flagged": 5488,
+      "flagged_share": 0.1505,
+      "cancellations_caught": 3912,
+      "catch_rate": 0.3375,
+      "gain_eur": 431217.5,
+      "loss_eur": 106762.43,
+      "net_eur": 324455.07
+    },
+    {
+      "threshold": 0.63,
+      "flagged": 5345,
+      "flagged_share": 0.1466,
+      "cancellations_caught": 3824,
+      "catch_rate": 0.3299,
+      "gain_eur": 423586.82,
+      "loss_eur": 103723.64,
+      "net_eur": 319863.18
+    },
+    {
+      "threshold": 0.64,
+      "flagged": 5181,
+      "flagged_share": 0.1421,
+      "cancellations_caught": 3731,
+      "catch_rate": 0.3219,
+      "gain_eur": 413758.32,
+      "loss_eur": 97738.02,
+      "net_eur": 316020.3
+    },
+    {
+      "threshold": 0.65,
+      "flagged": 5038,
+      "flagged_share": 0.1382,
+      "cancellations_caught": 3644,
+      "catch_rate": 0.3144,
+      "gain_eur": 404543.01,
+      "loss_eur": 94309.05,
+      "net_eur": 310233.96
+    },
+    {
+      "threshold": 0.66,
+      "flagged": 4875,
+      "flagged_share": 0.1337,
+      "cancellations_caught": 3538,
+      "catch_rate": 0.3053,
+      "gain_eur": 393925.07,
+      "loss_eur": 90915.96,
+      "net_eur": 303009.11
+    },
+    {
+      "threshold": 0.67,
+      "flagged": 4722,
+      "flagged_share": 0.1295,
+      "cancellations_caught": 3440,
+      "catch_rate": 0.2968,
+      "gain_eur": 382786.72,
+      "loss_eur": 88055.42,
+      "net_eur": 294731.3
+    },
+    {
+      "threshold": 0.68,
+      "flagged": 4538,
+      "flagged_share": 0.1244,
+      "cancellations_caught": 3316,
+      "catch_rate": 0.2861,
+      "gain_eur": 369022.58,
+      "loss_eur": 84180.94,
+      "net_eur": 284841.64
+    },
+    {
+      "threshold": 0.69,
+      "flagged": 4284,
+      "flagged_share": 0.1175,
+      "cancellations_caught": 3140,
+      "catch_rate": 0.2709,
+      "gain_eur": 348542.36,
+      "loss_eur": 79363.03,
+      "net_eur": 269179.33
+    },
+    {
+      "threshold": 0.7,
+      "flagged": 4000,
+      "flagged_share": 0.1097,
+      "cancellations_caught": 2952,
+      "catch_rate": 0.2547,
+      "gain_eur": 326974.17,
+      "loss_eur": 72766.01,
+      "net_eur": 254208.16
+    },
+    {
+      "threshold": 0.71,
+      "flagged": 3650,
+      "flagged_share": 0.1001,
+      "cancellations_caught": 2722,
+      "catch_rate": 0.2349,
+      "gain_eur": 298805.27,
+      "loss_eur": 65029.58,
+      "net_eur": 233775.69
+    },
+    {
+      "threshold": 0.72,
+      "flagged": 3303,
+      "flagged_share": 0.0906,
+      "cancellations_caught": 2482,
+      "catch_rate": 0.2142,
+      "gain_eur": 271077.4,
+      "loss_eur": 57597.39,
+      "net_eur": 213480.01
+    },
+    {
+      "threshold": 0.73,
+      "flagged": 2901,
+      "flagged_share": 0.0796,
+      "cancellations_caught": 2227,
+      "catch_rate": 0.1921,
+      "gain_eur": 241309.54,
+      "loss_eur": 47853.58,
+      "net_eur": 193455.96
+    },
+    {
+      "threshold": 0.74,
+      "flagged": 2509,
+      "flagged_share": 0.0688,
+      "cancellations_caught": 1966,
+      "catch_rate": 0.1696,
+      "gain_eur": 211137.62,
+      "loss_eur": 38203.79,
+      "net_eur": 172933.83
+    },
+    {
+      "threshold": 0.75,
+      "flagged": 2169,
+      "flagged_share": 0.0595,
+      "cancellations_caught": 1718,
+      "catch_rate": 0.1482,
+      "gain_eur": 182970.2,
+      "loss_eur": 31998.41,
+      "net_eur": 150971.79
+    },
+    {
+      "threshold": 0.76,
+      "flagged": 1876,
+      "flagged_share": 0.0514,
+      "cancellations_caught": 1514,
+      "catch_rate": 0.1306,
+      "gain_eur": 157850.98,
+      "loss_eur": 25269.49,
+      "net_eur": 132581.49
+    },
+    {
+      "threshold": 0.77,
+      "flagged": 1570,
+      "flagged_share": 0.0431,
+      "cancellations_caught": 1283,
+      "catch_rate": 0.1107,
+      "gain_eur": 133032.02,
+      "loss_eur": 20468.37,
+      "net_eur": 112563.66
+    },
+    {
+      "threshold": 0.78,
+      "flagged": 1314,
+      "flagged_share": 0.036,
+      "cancellations_caught": 1092,
+      "catch_rate": 0.0942,
+      "gain_eur": 112393.12,
+      "loss_eur": 16368.3,
+      "net_eur": 96024.82
+    },
+    {
+      "threshold": 0.79,
+      "flagged": 1100,
+      "flagged_share": 0.0302,
+      "cancellations_caught": 929,
+      "catch_rate": 0.0802,
+      "gain_eur": 95043.55,
+      "loss_eur": 12702.8,
+      "net_eur": 82340.75
+    },
+    {
+      "threshold": 0.8,
+      "flagged": 898,
+      "flagged_share": 0.0246,
+      "cancellations_caught": 774,
+      "catch_rate": 0.0668,
+      "gain_eur": 78328.58,
+      "loss_eur": 9245.16,
+      "net_eur": 69083.42
+    },
+    {
+      "threshold": 0.81,
+      "flagged": 730,
+      "flagged_share": 0.02,
+      "cancellations_caught": 643,
+      "catch_rate": 0.0555,
+      "gain_eur": 64396.14,
+      "loss_eur": 6090.24,
+      "net_eur": 58305.9
+    },
+    {
+      "threshold": 0.82,
+      "flagged": 626,
+      "flagged_share": 0.0172,
+      "cancellations_caught": 565,
+      "catch_rate": 0.0487,
+      "gain_eur": 55273.3,
+      "loss_eur": 4212.2,
+      "net_eur": 51061.1
+    },
+    {
+      "threshold": 0.83,
+      "flagged": 523,
+      "flagged_share": 0.0143,
+      "cancellations_caught": 484,
+      "catch_rate": 0.0418,
+      "gain_eur": 46686.76,
+      "loss_eur": 2525.76,
+      "net_eur": 44161.0
+    },
+    {
+      "threshold": 0.84,
+      "flagged": 391,
+      "flagged_share": 0.0107,
+      "cancellations_caught": 363,
+      "catch_rate": 0.0313,
+      "gain_eur": 34787.98,
+      "loss_eur": 1879.82,
+      "net_eur": 32908.17
+    },
+    {
+      "threshold": 0.85,
+      "flagged": 306,
+      "flagged_share": 0.0084,
+      "cancellations_caught": 288,
+      "catch_rate": 0.0248,
+      "gain_eur": 27622.14,
+      "loss_eur": 1191.09,
+      "net_eur": 26431.05
+    },
+    {
+      "threshold": 0.86,
+      "flagged": 242,
+      "flagged_share": 0.0066,
+      "cancellations_caught": 230,
+      "catch_rate": 0.0198,
+      "gain_eur": 21423.85,
+      "loss_eur": 645.89,
+      "net_eur": 20777.96
+    },
+    {
+      "threshold": 0.87,
+      "flagged": 145,
+      "flagged_share": 0.004,
+      "cancellations_caught": 138,
+      "catch_rate": 0.0119,
+      "gain_eur": 12772.66,
+      "loss_eur": 440.33,
+      "net_eur": 12332.33
+    },
+    {
+      "threshold": 0.88,
+      "flagged": 72,
+      "flagged_share": 0.002,
+      "cancellations_caught": 68,
+      "catch_rate": 0.0059,
+      "gain_eur": 6066.74,
+      "loss_eur": 282.45,
+      "net_eur": 5784.29
+    },
+    {
+      "threshold": 0.89,
+      "flagged": 39,
+      "flagged_share": 0.0011,
+      "cancellations_caught": 37,
+      "catch_rate": 0.0032,
+      "gain_eur": 2955.1,
+      "loss_eur": 164.64,
+      "net_eur": 2790.46
+    },
+    {
+      "threshold": 0.9,
+      "flagged": 23,
+      "flagged_share": 0.0006,
+      "cancellations_caught": 21,
+      "catch_rate": 0.0018,
+      "gain_eur": 1611.62,
+      "loss_eur": 164.64,
+      "net_eur": 1446.98
+    },
+    {
+      "threshold": 0.91,
+      "flagged": 16,
+      "flagged_share": 0.0004,
+      "cancellations_caught": 15,
+      "catch_rate": 0.0013,
+      "gain_eur": 1182.09,
+      "loss_eur": 109.2,
+      "net_eur": 1072.89
+    },
+    {
+      "threshold": 0.92,
+      "flagged": 5,
+      "flagged_share": 0.0001,
+      "cancellations_caught": 4,
+      "catch_rate": 0.0003,
+      "gain_eur": 352.9,
+      "loss_eur": 109.2,
+      "net_eur": 243.7
+    },
+    {
+      "threshold": 0.93,
+      "flagged": 3,
+      "flagged_share": 0.0001,
+      "cancellations_caught": 2,
+      "catch_rate": 0.0002,
+      "gain_eur": 233.22,
+      "loss_eur": 109.2,
+      "net_eur": 124.02
+    },
+    {
+      "threshold": 0.94,
+      "flagged": 2,
+      "flagged_share": 0.0001,
+      "cancellations_caught": 1,
+      "catch_rate": 0.0001,
+      "gain_eur": 187.14,
+      "loss_eur": 109.2,
+      "net_eur": 77.94
+    },
+    {
+      "threshold": 0.95,
+      "flagged": 2,
+      "flagged_share": 0.0001,
+      "cancellations_caught": 1,
+      "catch_rate": 0.0001,
+      "gain_eur": 187.14,
+      "loss_eur": 109.2,
+      "net_eur": 77.94
+    },
+    {
+      "threshold": 0.96,
+      "flagged": 0,
+      "flagged_share": 0.0,
+      "cancellations_caught": 0,
+      "catch_rate": 0.0,
+      "gain_eur": 0.0,
+      "loss_eur": 0.0,
+      "net_eur": 0.0
+    },
+    {
+      "threshold": 0.97,
+      "flagged": 0,
+      "flagged_share": 0.0,
+      "cancellations_caught": 0,
+      "catch_rate": 0.0,
+      "gain_eur": 0.0,
+      "loss_eur": 0.0,
+      "net_eur": 0.0
+    },
+    {
+      "threshold": 0.98,
+      "flagged": 0,
+      "flagged_share": 0.0,
+      "cancellations_caught": 0,
+      "catch_rate": 0.0,
+      "gain_eur": 0.0,
+      "loss_eur": 0.0,
+      "net_eur": 0.0
+    },
+    {
+      "threshold": 0.99,
+      "flagged": 0,
+      "flagged_share": 0.0,
+      "cancellations_caught": 0,
+      "catch_rate": 0.0,
+      "gain_eur": 0.0,
+      "loss_eur": 0.0,
+      "net_eur": 0.0
+    },
+    {
+      "threshold": 1.0,
+      "flagged": 0,
+      "flagged_share": 0.0,
+      "cancellations_caught": 0,
+      "catch_rate": 0.0,
+      "gain_eur": 0.0,
+      "loss_eur": 0.0,
+      "net_eur": 0.0
+    }
+  ]
+}

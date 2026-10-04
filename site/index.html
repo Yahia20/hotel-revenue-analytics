@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hotel Cancellation Analytics</title>
+<meta name="description" content="Where two hotels lose money to cancellations, which bookings are likely to cancel, and a deposit policy tested on a year the model never saw. English and Arabic.">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6;   /* City hotel */
+  --series-2: #eb6834;   /* Resort */
+  --single: #4a3aa7;     /* one-series charts */
+  --neutral-bar: #c3c2b7;
+  --div-pos: #2a78d6;
+  --div-neg: #e34948;
+  --div-mid: #f0efec;
+  --good: #006300;
+  --bad: #b42323;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --series-2: #d95926; --single: #9085e9; --neutral-bar: #4a4a46;
+    --div-pos: #3987e5; --div-neg: #e66767; --div-mid: #383835; --good: #0ca30c; --bad: #e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --series-1: #3987e5; --series-2: #d95926; --single: #9085e9; --neutral-bar: #4a4a46;
+  --div-pos: #3987e5; --div-neg: #e66767; --div-mid: #383835; --good: #0ca30c; --bad: #e66767;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page);
+  color: var(--ink);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+}
+html[lang="ar"] body { font-family: "Segoe UI", Tahoma, system-ui, sans-serif; }
+main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+.topbar { display: flex; justify-content: flex-end; gap: 8px; }
+.btn {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink-2);
+  border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer;
+}
+header { margin-top: 12px; }
+header h1 { font-size: 32px; line-height: 1.25; margin: 0 0 10px; }
+header p { color: var(--ink-2); margin: 0; max-width: 760px; font-size: 17px; }
+.meta { font-size: 13px; color: var(--muted); margin-top: 10px; }
+section { margin-top: 48px; }
+section > h2 { font-size: 22px; margin: 0 0 6px; }
+section > p.lede { color: var(--ink-2); margin: 0 0 16px; max-width: 780px; }
+.answer { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 22px; }
+.answer ol { margin: 0; padding-inline-start: 22px; }
+.answer li { margin: 8px 0; font-size: 17px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.tile, .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+.tile .label { font-size: 14px; color: var(--ink-2); }
+.tile .value { font-size: 32px; font-weight: 600; margin-top: 4px; line-height: 1.2; }
+.tile .value.good { color: var(--good); }
+.tile .value.bad { color: var(--bad); }
+.tile .note { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); gap: 12px; }
+.card h3 { font-size: 16px; margin: 0 0 2px; }
+.card .sub { font-size: 14px; color: var(--ink-2); margin: 0 0 6px; }
+.chart { width: 100%; height: 300px; direction: ltr; }
+details.numbers { margin-top: 6px; font-size: 14px; }
+summary { cursor: pointer; color: var(--ink-2); }
+table { border-collapse: collapse; width: 100%; margin-top: 8px; font-variant-numeric: tabular-nums; font-size: 14px; }
+th, td { text-align: start; padding: 6px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { color: var(--ink-2); font-weight: 600; }
+td.num, th.num { text-align: end; }
+.table-wrap { overflow-x: auto; }
+.reco { border-inline-start: 4px solid var(--single); background: var(--surface); border-radius: 10px; padding: 14px 18px; font-size: 17px; margin-bottom: 12px; }
+.reco b { color: var(--ink); }
+.heat td.cell { text-align: center; font-weight: 600; color: var(--ink); }
+ul.plain { margin: 0; padding-inline-start: 22px; }
+ul.plain li { margin: 8px 0; }
+details.tech { margin-top: 48px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 6px 18px; }
+details.tech > summary { font-size: 18px; font-weight: 600; color: var(--ink); padding: 12px 0; }
+details.tech h3.tech-h { font-size: 17px; margin: 28px 0 8px; }
+details.tech .card { background: var(--page); }
+footer { margin-top: 48px; font-size: 13px; color: var(--muted); }
+a { color: inherit; }
+@media (max-width: 560px) { header h1 { font-size: 26px; } .tile .value { font-size: 28px; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <button class="btn" id="lang-toggle" type="button"></button>
+    <button class="btn" id="theme-toggle" type="button"></button>
+  </div>
+
+  <header>
+    <h1 id="h-title"></h1>
+    <p id="h-sub"></p>
+    <div class="meta" id="h-meta"></div>
+  </header>
+
+  <section>
+    <h2 id="s0-h"></h2>
+    <div class="answer"><ol id="answer"></ol></div>
+    <div class="tiles" id="headline" style="margin-top:12px"></div>
+  </section>
+
+  <section>
+    <h2 id="s1-h"></h2>
+    <p class="lede" id="s1-p"></p>
+    <div class="grid-2">
+      <div class="card"><h3 id="c-rate-h"></h3><p class="sub" id="c-rate-s"></p><div class="chart" id="c-rate"></div><details class="numbers"><summary class="sum-numbers"></summary><div class="table-wrap" id="t-rate"></div></details></div>
+      <div class="card"><h3 id="c-lost-h"></h3><p class="sub" id="c-lost-s"></p><div class="chart" id="c-lost"></div><details class="numbers"><summary class="sum-numbers"></summary><div class="table-wrap" id="t-lost"></div></details></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="s2-h"></h2>
+    <p class="lede" id="s2-p"></p>
+    <div class="grid-3" id="drivers"></div>
+  </section>
+
+  <section>
+    <h2 id="s3-h"></h2>
+    <p class="lede" id="s3-p"></p>
+    <div class="tiles" id="predict-tiles"></div>
+    <div class="card" style="margin-top:12px"><h3 id="c-week-h"></h3><p class="sub" id="c-week-s"></p>
+      <div class="grid-2"><div class="chart" id="c-week-city"></div><div class="chart" id="c-week-resort"></div></div>
+      <details class="numbers"><summary class="sum-numbers"></summary><div class="table-wrap" id="t-week"></div></details></div>
+  </section>
+
+  <section>
+    <h2 id="s4-h"></h2>
+    <div class="reco" id="reco"></div>
+    <div class="grid-2">
+      <div class="card"><h3 id="c-compare-h"></h3><p class="sub" id="c-compare-s"></p><div class="chart" id="c-compare"></div></div>
+      <div class="card"><h3 id="t-sens-h"></h3><p class="sub" id="t-sens-s"></p><div class="table-wrap" id="t-sens"></div><p class="sub" id="t-sens-n" style="margin-top:10px"></p></div>
+    </div>
+    <div class="tiles" id="policy-tiles" style="margin-top:12px"></div>
+  </section>
+
+  <section>
+    <h2 id="s5-h"></h2>
+    <div class="card"><ul class="plain" id="trust"></ul></div>
+  </section>
+
+  <section>
+    <h2 id="s6-h"></h2>
+    <div class="card"><ul class="plain" id="limits"></ul></div>
+  </section>
+
+  <details class="tech" id="tech">
+    <summary id="tech-h"></summary>
+    <p class="sub" id="tech-p"></p>
+    <div class="tiles" id="model-tiles"></div>
+    <div class="grid-2" style="margin-top:12px">
+      <div class="card"><h3 id="c-leak-h"></h3><p class="sub" id="c-leak-s"></p><div class="chart" id="c-leak"></div><div class="table-wrap" id="t-leak"></div></div>
+      <div class="card"><h3 id="c-calib-h"></h3><p class="sub" id="c-calib-s"></p><div class="chart" id="c-calib"></div><details class="numbers"><summary class="sum-numbers"></summary><div class="table-wrap" id="t-calib"></div></details></div>
+    </div>
+    <div class="grid-2" style="margin-top:12px">
+      <div class="card"><h3 id="c-curve-h"></h3><p class="sub" id="c-curve-s"></p><div class="chart" id="c-curve"></div></div>
+      <div class="card"><h3 id="t-dq-h"></h3><p class="sub" id="t-dq-s"></p><div class="table-wrap" id="t-dq"></div></div>
+    </div>
+    <h3 class="tech-h" id="method-h"></h3>
+    <ul class="plain" id="method"></ul>
+    <p class="sub" id="tech-links" style="margin:16px 0 12px"></p>
+  </details>
+
+  <footer id="footer"></footer>
+</main>
+
+<script>
+const D = {"built":"2026-10-04","totals":{"bookings":119208.0,"cancellation_rate":0.3707637071337494,"cancelled_revenue":16721837.119999921,"realized_revenue":25986976.03000014,"first_arrival":"2015-07-01T00:00:00","last_arrival":"2017-08-31T00:00:00"},"quality":{"source_rows":119390,"negative_adr":1,"adr_outlier":1,"zero_guests":180,"excluded":182,"identical_rows":40165,"unknown_country":488},"dbt":{"tests":28,"passed":0,"warned":0,"failed":0,"warnings":[],"models":6},"monthly":[{"hotel":"City Hotel","arrival_month":"2015-07-01","bookings":1396,"cancellations":939,"no_shows":21,"cancellation_rate":0.6726,"room_nights_sold":1089.0,"realized_revenue_eur":79645.69,"cancelled_revenue_eur":181952.17,"realized_adr_eur":73.1365},{"hotel":"City Hotel","arrival_month":"2015-08-01","bookings":2474,"cancellations":1232,"no_shows":15,"cancellation_rate":0.498,"room_nights_sold":3500.0,"realized_revenue_eur":285197.49,"cancelled_revenue_eur":237178.37,"realized_adr_eur":81.485},{"hotel":"City Hotel","arrival_month":"2015-09-01","bookings":3524,"cancellations":1542,"no_shows":30,"cancellation_rate":0.4376,"room_nights_sold":5467.0,"realized_revenue_eur":588544.97,"cancelled_revenue_eur":439562.2,"realized_adr_eur":107.6541},{"hotel":"City Hotel","arrival_month":"2015-10-01","bookings":3382,"cancellations":1321,"no_shows":10,"cancellation_rate":0.3906,"room_nights_sold":5560.0,"realized_revenue_eur":521369.65,"cancelled_revenue_eur":283480.47,"realized_adr_eur":93.7715},{"hotel":"City Hotel","arrival_month":"2015-11-01","bookings":1233,"cancellations":301,"no_shows":24,"cancellation_rate":0.2441,"room_nights_sold":2652.0,"realized_revenue_eur":191210.34,"cancelled_revenue_eur":77033.62,"realized_adr_eur":72.1004},{"hotel":"City Hotel","arrival_month":"2015-12-01","bookings":1649,"cancellations":668,"no_shows":22,"cancellation_rate":0.4051,"room_nights_sold":2823.0,"realized_revenue_eur":228337.4,"cancelled_revenue_eur":178177.68,"realized_adr_eur":80.8847},{"hotel":"City Hotel","arrival_month":"2016-01-01","bookings":1364,"cancellations":438,"no_shows":40,"cancellation_rate":0.3211,"room_nights_sold":2289.0,"realized_revenue_eur":175232.07,"cancelled_revenue_eur":114680.79,"realized_adr_eur":76.554},{"hotel":"City Hotel","arrival_month":"2016-02-01","bookings":2365,"cancellations":929,"no_shows":133,"cancellation_rate":0.3928,"room_nights_sold":3857.0,"realized_revenue_eur":318750.98,"cancelled_revenue_eur":227680.56,"realized_adr_eur":82.6422},{"hotel":"City Hotel","arrival_month":"2016-03-01","bookings":3040,"cancellations":1107,"no_shows":53,"cancellation_rate":0.3641,"room_nights_sold":5809.0,"realized_revenue_eur":510550.81,"cancelled_revenue_eur":334531.38,"realized_adr_eur":87.8896},{"hotel":"City Hotel","arrival_month":"2016-04-01","bookings":3558,"cancellations":1538,"no_shows":47,"cancellation_rate":0.4323,"room_nights_sold":5784.0,"realized_revenue_eur":578236.36,"cancelled_revenue_eur":460962.33,"realized_adr_eur":99.9717},{"hotel":"City Hotel","arrival_month":"2016-05-01","bookings":3673,"cancellations":1436,"no_shows":51,"cancellation_rate":0.391,"room_nights_sold":6256.0,"realized_revenue_eur":691974.92,"cancelled_revenue_eur":443586.4,"realized_adr_eur":110.6098},{"hotel":"City Hotel","arrival_month":"2016-06-01","bookings":3921,"cancellations":1720,"no_shows":40,"cancellation_rate":0.4387,"room_nights_sold":5851.0,"realized_revenue_eur":634281.95,"cancelled_revenue_eur":543589.04,"realized_adr_eur":108.4057},{"hotel":"City Hotel","arrival_month":"2016-07-01","bookings":3119,"cancellations":1038,"no_shows":33,"cancellation_rate":0.3328,"room_nights_sold":6600.0,"realized_revenue_eur":743551.81,"cancelled_revenue_eur":384730.54,"realized_adr_eur":112.6594},{"hotel":"City Hotel","arrival_month":"2016-08-01","bookings":3370,"cancellations":1247,"no_shows":33,"cancellation_rate":0.37,"room_nights_sold":6744.0,"realized_revenue_eur":805804.03,"cancelled_revenue_eur":491333.48,"realized_adr_eur":119.4846},{"hotel":"City Hotel","arrival_month":"2016-09-01","bookings":3868,"cancellations":1567,"no_shows":26,"cancellation_rate":0.4051,"room_nights_sold":6407.0,"realized_revenue_eur":770081.0,"cancelled_revenue_eur":544882.11,"realized_adr_eur":120.1937},{"hotel":"City Hotel","arrival_month":"2016-10-01","bookings":4212,"cancellations":1947,"no_shows":41,"cancellation_rate":0.4623,"room_nights_sold":6458.0,"realized_revenue_eur":719643.48,"cancelled_revenue_eur":596863.15,"realized_adr_eur":111.4344},{"hotel":"City Hotel","arrival_month":"2016-11-01","bookings":3103,"cancellations":1359,"no_shows":34,"cancellation_rate":0.438,"room_nights_sold":5104.0,"realized_revenue_eur":494472.78,"cancelled_revenue_eur":403724.68,"realized_adr_eur":96.8795},{"hotel":"City Hotel","arrival_month":"2016-12-01","bookings":2465,"cancellations":1069,"no_shows":23,"cancellation_rate":0.4337,"room_nights_sold":4265.0,"realized_revenue_eur":413031.66,"cancelled_revenue_eur":375488.67,"realized_adr_eur":96.8421},{"hotel":"City Hotel","arrival_month":"2017-01-01","bookings":2366,"cancellations":1043,"no_shows":16,"cancellation_rate":0.4408,"room_nights_sold":3948.0,"realized_revenue_eur":352313.25,"cancelled_revenue_eur":313045.69,"realized_adr_eur":89.2384},{"hotel":"City Hotel","arrival_month":"2017-02-01","bookings":2585,"cancellations":970,"no_shows":56,"cancellation_rate":0.3752,"room_nights_sold":4891.0,"realized_revenue_eur":449260.99,"cancelled_revenue_eur":293612.35,"realized_adr_eur":91.8546},{"hotel":"City Hotel","arrival_month":"2017-03-01","bookings":3393,"cancellations":1277,"no_shows":35,"cancellation_rate":0.3764,"room_nights_sold":6331.0,"realized_revenue_eur":585675.11,"cancelled_revenue_eur":390341.69,"realized_adr_eur":92.5091},{"hotel":"City Hotel","arrival_month":"2017-04-01","bookings":3911,"cancellations":1921,"no_shows":16,"cancellation_rate":0.4912,"room_nights_sold":6339.0,"realized_revenue_eur":790842.45,"cancelled_revenue_eur":746482.35,"realized_adr_eur":124.7582},{"hotel":"City Hotel","arrival_month":"2017-05-01","bookings":4548,"cancellations":2217,"no_shows":50,"cancellation_rate":0.4875,"room_nights_sold":6607.0,"realized_revenue_eur":876838.41,"cancelled_revenue_eur":878912.05,"realized_adr_eur":132.7135},{"hotel":"City Hotel","arrival_month":"2017-06-01","bookings":3964,"cancellations":1807,"no_shows":24,"cancellation_rate":0.4559,"room_nights_sold":6405.0,"realized_revenue_eur":832834.32,"cancelled_revenue_eur":759306.72,"realized_adr_eur":130.0288},{"hotel":"City Hotel","arrival_month":"2017-07-01","bookings":3556,"cancellations":1324,"no_shows":21,"cancellation_rate":0.3723,"room_nights_sold":6861.0,"realized_revenue_eur":862229.75,"cancelled_revenue_eur":593485.01,"realized_adr_eur":125.6711},{"hotel":"City Hotel","arrival_month":"2017-08-01","bookings":3123,"cancellations":1121,"no_shows":21,"cancellation_rate":0.3589,"room_nights_sold":6571.0,"realized_revenue_eur":885430.33,"cancelled_revenue_eur":585036.28,"realized_adr_eur":134.7482},{"hotel":"Resort Hotel","arrival_month":"2015-07-01","bookings":1378,"cancellations":320,"no_shows":6,"cancellation_rate":0.2322,"room_nights_sold":5375.0,"realized_revenue_eur":678694.1,"cancelled_revenue_eur":206569.57,"realized_adr_eur":126.2687},{"hotel":"Resort Hotel","arrival_month":"2015-08-01","bookings":1409,"cancellations":366,"no_shows":5,"cancellation_rate":0.2598,"room_nights_sold":5608.0,"realized_revenue_eur":852455.22,"cancelled_revenue_eur":323724.26,"realized_adr_eur":152.007},{"hotel":"Resort Hotel","arrival_month":"2015-09-01","bookings":1585,"cancellations":551,"no_shows":8,"cancellation_rate":0.3476,"room_nights_sold":5564.0,"realized_revenue_eur":466075.7,"cancelled_revenue_eur":171972.52,"realized_adr_eur":83.7663},{"hotel":"Resort Hotel","arrival_month":"2015-10-01","bookings":1569,"cancellations":411,"no_shows":8,"cancellation_rate":0.262,"room_nights_sold":4465.0,"realized_revenue_eur":263345.23,"cancelled_revenue_eur":102010.73,"realized_adr_eur":58.9799},{"hotel":"Resort Hotel","arrival_month":"2015-11-01","bookings":1104,"cancellations":185,"no_shows":15,"cancellation_rate":0.1676,"room_nights_sold":3220.0,"realized_revenue_eur":155481.15,"cancelled_revenue_eur":39246.27,"realized_adr_eur":48.2861},{"hotel":"Resort Hotel","arrival_month":"2015-12-01","bookings":1264,"cancellations":305,"no_shows":27,"cancellation_rate":0.2413,"room_nights_sold":2875.0,"realized_revenue_eur":201184.17,"cancelled_revenue_eur":65649.59,"realized_adr_eur":69.9771},{"hotel":"Resort Hotel","arrival_month":"2016-01-01","bookings":884,"cancellations":119,"no_shows":10,"cancellation_rate":0.1346,"room_nights_sold":1946.0,"realized_revenue_eur":89289.31,"cancelled_revenue_eur":24492.68,"realized_adr_eur":45.8835},{"hotel":"Resort Hotel","arrival_month":"2016-02-01","bookings":1519,"cancellations":406,"no_shows":11,"cancellation_rate":0.2673,"room_nights_sold":3176.0,"realized_revenue_eur":165082.12,"cancelled_revenue_eur":76374.01,"realized_adr_eur":51.978},{"hotel":"Resort Hotel","arrival_month":"2016-03-01","bookings":1778,"cancellations":369,"no_shows":18,"cancellation_rate":0.2075,"room_nights_sold":4409.0,"realized_revenue_eur":256759.57,"cancelled_revenue_eur":119658.85,"realized_adr_eur":58.2353},{"hotel":"Resort Hotel","arrival_month":"2016-04-01","bookings":1867,"cancellations":522,"no_shows":7,"cancellation_rate":0.2796,"room_nights_sold":4736.0,"realized_revenue_eur":317536.26,"cancelled_revenue_eur":165430.42,"realized_adr_eur":67.0474},{"hotel":"Resort Hotel","arrival_month":"2016-05-01","bookings":1802,"cancellations":479,"no_shows":14,"cancellation_rate":0.2658,"room_nights_sold":5376.0,"realized_revenue_eur":380692.27,"cancelled_revenue_eur":138875.63,"realized_adr_eur":70.8133},{"hotel":"Resort Hotel","arrival_month":"2016-06-01","bookings":1369,"cancellations":376,"no_shows":10,"cancellation_rate":0.2747,"room_nights_sold":5546.0,"realized_revenue_eur":510518.43,"cancelled_revenue_eur":210095.37,"realized_adr_eur":92.0516},{"hotel":"Resort Hotel","arrival_month":"2016-07-01","bookings":1441,"cancellations":456,"no_shows":5,"cancellation_rate":0.3164,"room_nights_sold":5340.0,"realized_revenue_eur":780924.53,"cancelled_revenue_eur":398143.45,"realized_adr_eur":146.2405},{"hotel":"Resort Hotel","arrival_month":"2016-08-01","bookings":1685,"cancellations":578,"no_shows":6,"cancellation_rate":0.343,"room_nights_sold":5674.0,"realized_revenue_eur":1001850.12,"cancelled_revenue_eur":596877.33,"realized_adr_eur":176.5686},{"hotel":"Resort Hotel","arrival_month":"2016-09-01","bookings":1523,"cancellations":455,"no_shows":3,"cancellation_rate":0.2988,"room_nights_sold":5432.0,"realized_revenue_eur":518866.35,"cancelled_revenue_eur":231236.99,"realized_adr_eur":95.5203},{"hotel":"Resort Hotel","arrival_month":"2016-10-01","bookings":1984,"cancellations":567,"no_shows":14,"cancellation_rate":0.2858,"room_nights_sold":5289.0,"realized_revenue_eur":352458.36,"cancelled_revenue_eur":170378.43,"realized_adr_eur":66.6399},{"hotel":"Resort Hotel","arrival_month":"2016-11-01","bookings":1331,"cancellations":275,"no_shows":5,"cancellation_rate":0.2066,"room_nights_sold":3713.0,"realized_revenue_eur":192628.72,"cancelled_revenue_eur":44599.01,"realized_adr_eur":51.8795},{"hotel":"Resort Hotel","arrival_month":"2016-12-01","bookings":1381,"cancellations":326,"no_shows":10,"cancellation_rate":0.2361,"room_nights_sold":3329.0,"realized_revenue_eur":244487.39,"cancelled_revenue_eur":93484.47,"realized_adr_eur":73.4417},{"hotel":"Resort Hotel","arrival_month":"2017-01-01","bookings":1307,"cancellations":206,"no_shows":9,"cancellation_rate":0.1576,"room_nights_sold":3079.0,"realized_revenue_eur":159454.55,"cancelled_revenue_eur":44181.43,"realized_adr_eur":51.7878},{"hotel":"Resort Hotel","arrival_month":"2017-02-01","bookings":1583,"cancellations":388,"no_shows":28,"cancellation_rate":0.2451,"room_nights_sold":3819.0,"realized_revenue_eur":213572.62,"cancelled_revenue_eur":73764.3,"realized_adr_eur":55.9237},{"hotel":"Resort Hotel","arrival_month":"2017-03-01","bookings":1555,"cancellations":394,"no_shows":16,"cancellation_rate":0.2534,"room_nights_sold":5107.0,"realized_revenue_eur":298800.66,"cancelled_revenue_eur":137190.58,"realized_adr_eur":58.5081},{"hotel":"Resort Hotel","arrival_month":"2017-04-01","bookings":1742,"cancellations":537,"no_shows":7,"cancellation_rate":0.3083,"room_nights_sold":4905.0,"realized_revenue_eur":412423.65,"cancelled_revenue_eur":237733.56,"realized_adr_eur":84.0823},{"hotel":"Resort Hotel","arrival_month":"2017-05-01","bookings":1757,"cancellations":545,"no_shows":17,"cancellation_rate":0.3102,"room_nights_sold":5352.0,"realized_revenue_eur":444897.6,"cancelled_revenue_eur":251538.18,"realized_adr_eur":83.1274},{"hotel":"Resort Hotel","arrival_month":"2017-06-01","bookings":1675,"cancellations":631,"no_shows":10,"cancellation_rate":0.3767,"room_nights_sold":5318.0,"realized_revenue_eur":604903.82,"cancelled_revenue_eur":403105.23,"realized_adr_eur":113.7465},{"hotel":"Resort Hotel","arrival_month":"2017-07-01","bookings":1754,"cancellations":660,"no_shows":10,"cancellation_rate":0.3763,"room_nights_sold":5597.0,"realized_revenue_eur":954500.86,"cancelled_revenue_eur":722435.83,"realized_adr_eur":170.5379},{"hotel":"Resort Hotel","arrival_month":"2017-08-01","bookings":1800,"cancellations":693,"no_shows":12,"cancellation_rate":0.385,"room_nights_sold":5564.0,"realized_revenue_eur":1084751.27,"cancelled_revenue_eur":793408.65,"realized_adr_eur":194.9589}],"drivers":[{"dimension":"arrival_month","value":"01-Jan","bookings":5921,"cancellations":1806,"cancellation_rate":0.305,"cancelled_revenue_eur":496400.59},{"dimension":"arrival_month","value":"02-Feb","bookings":8052,"cancellations":2693,"cancellation_rate":0.3345,"cancelled_revenue_eur":671431.22},{"dimension":"arrival_month","value":"03-Mar","bookings":9766,"cancellations":3147,"cancellation_rate":0.3222,"cancelled_revenue_eur":981722.5},{"dimension":"arrival_month","value":"04-Apr","bookings":11078,"cancellations":4518,"cancellation_rate":0.4078,"cancelled_revenue_eur":1610608.66},{"dimension":"arrival_month","value":"05-May","bookings":11780,"cancellations":4677,"cancellation_rate":0.397,"cancelled_revenue_eur":1712912.26},{"dimension":"arrival_month","value":"06-Jun","bookings":10929,"cancellations":4534,"cancellation_rate":0.4149,"cancelled_revenue_eur":1916096.36},{"dimension":"arrival_month","value":"07-Jul","bookings":12644,"cancellations":4737,"cancellation_rate":0.3746,"cancelled_revenue_eur":2487316.57},{"dimension":"arrival_month","value":"08-Aug","bookings":13861,"cancellations":5237,"cancellation_rate":0.3778,"cancelled_revenue_eur":3027558.37},{"dimension":"arrival_month","value":"09-Sep","bookings":10500,"cancellations":4115,"cancellation_rate":0.3919,"cancelled_revenue_eur":1387653.82},{"dimension":"arrival_month","value":"10-Oct","bookings":11147,"cancellations":4246,"cancellation_rate":0.3809,"cancelled_revenue_eur":1152732.78},{"dimension":"arrival_month","value":"11-Nov","bookings":6771,"cancellations":2120,"cancellation_rate":0.3131,"cancelled_revenue_eur":564603.58},{"dimension":"arrival_month","value":"12-Dec","bookings":6759,"cancellations":2368,"cancellation_rate":0.3503,"cancelled_revenue_eur":712800.41},{"dimension":"customer_type","value":"Contract","bookings":4072,"cancellations":1262,"cancellation_rate":0.3099,"cancelled_revenue_eur":354160.62},{"dimension":"customer_type","value":"Group","bookings":574,"cancellations":58,"cancellation_rate":0.101,"cancelled_revenue_eur":17325.19},{"dimension":"customer_type","value":"Transient","bookings":89475,"cancellations":36493,"cancellation_rate":0.4079,"cancelled_revenue_eur":14861066.96},{"dimension":"customer_type","value":"Transient-Party","bookings":25087,"cancellations":6385,"cancellation_rate":0.2545,"cancelled_revenue_eur":1489284.35},{"dimension":"deposit_type","value":"No Deposit","bookings":104460,"cancellations":29669,"cancellation_rate":0.284,"cancelled_revenue_eur":13102901.92},{"dimension":"deposit_type","value":"Non Refund","bookings":14586,"cancellations":14493,"cancellation_rate":0.9936,"cancelled_revenue_eur":3598937.03},{"dimension":"deposit_type","value":"Refundable","bookings":162,"cancellations":36,"cancellation_rate":0.2222,"cancelled_revenue_eur":19998.17},{"dimension":"distribution_channel","value":"Corporate","bookings":6651,"cancellations":1467,"cancellation_rate":0.2206,"cancelled_revenue_eur":286208.54},{"dimension":"distribution_channel","value":"Direct","bookings":14610,"cancellations":2555,"cancellation_rate":0.1749,"cancelled_revenue_eur":1140859.12},{"dimension":"distribution_channel","value":"GDS","bookings":193,"cancellations":37,"cancellation_rate":0.1917,"cancelled_revenue_eur":12989.46},{"dimension":"distribution_channel","value":"TA/TO","bookings":97749,"cancellations":40135,"cancellation_rate":0.4106,"cancelled_revenue_eur":15281172.5},{"dimension":"distribution_channel","value":"Undefined","bookings":5,"cancellations":4,"cancellation_rate":0.8,"cancelled_revenue_eur":607.5},{"dimension":"hotel","value":"City Hotel","bookings":79162,"cancellations":33078,"cancellation_rate":0.4179,"cancelled_revenue_eur":10879659.78},{"dimension":"hotel","value":"Resort Hotel","bookings":40046,"cancellations":11120,"cancellation_rate":0.2777,"cancelled_revenue_eur":5842177.34},{"dimension":"lead_time_band","value":"0-7 days","bookings":19635,"cancellations":1885,"cancellation_rate":0.096,"cancelled_revenue_eur":449424.93},{"dimension":"lead_time_band","value":"181-365 days","bookings":21533,"cancellations":11942,"cancellation_rate":0.5546,"cancelled_revenue_eur":4419447.23},{"dimension":"lead_time_band","value":"31-90 days","bookings":29528,"cancellations":11140,"cancellation_rate":0.3773,"cancelled_revenue_eur":4321162.78},{"dimension":"lead_time_band","value":"365+ days","bookings":3147,"cancellations":2129,"cancellation_rate":0.6765,"cancelled_revenue_eur":355835.77},{"dimension":"lead_time_band","value":"8-30 days","bookings":18945,"cancellations":5283,"cancellation_rate":0.2789,"cancelled_revenue_eur":2045797.07},{"dimension":"lead_time_band","value":"91-180 days","bookings":26420,"cancellations":11819,"cancellation_rate":0.4474,"cancelled_revenue_eur":5130169.34},{"dimension":"market_segment","value":"Aviation","bookings":235,"cancellations":52,"cancellation_rate":0.2213,"cancelled_revenue_eur":16578.0},{"dimension":"market_segment","value":"Complementary","bookings":728,"cancellations":89,"cancellation_rate":0.1223,"cancelled_revenue_eur":269.99},{"dimension":"market_segment","value":"Corporate","bookings":5282,"cancellations":991,"cancellation_rate":0.1876,"cancelled_revenue_eur":196383.07},{"dimension":"market_segment","value":"Direct","bookings":12582,"cancellations":1934,"cancellation_rate":0.1537,"cancelled_revenue_eur":993409.82},{"dimension":"market_segment","value":"Groups","bookings":19790,"cancellations":12094,"cancellation_rate":0.6111,"cancelled_revenue_eur":2800543.98},{"dimension":"market_segment","value":"Offline TA/TO","bookings":24181,"cancellations":8301,"cancellation_rate":0.3433,"cancelled_revenue_eur":2486958.15},{"dimension":"market_segment","value":"Online TA","bookings":56408,"cancellations":20735,"cancellation_rate":0.3676,"cancelled_revenue_eur":10227646.11},{"dimension":"market_segment","value":"Undefined","bookings":2,"cancellations":2,"cancellation_rate":1.0,"cancelled_revenue_eur":48.0},{"dimension":"previous_cancellations","value":"1 or more","bookings":6479,"cancellations":5940,"cancellation_rate":0.9168,"cancelled_revenue_eur":1342043.88},{"dimension":"previous_cancellations","value":"None","bookings":112729,"cancellations":38258,"cancellation_rate":0.3394,"cancelled_revenue_eur":15379793.24},{"dimension":"repeat_guest","value":"First stay","bookings":115454,"cancellations":43648,"cancellation_rate":0.3781,"cancelled_revenue_eur":16621539.46},{"dimension":"repeat_guest","value":"Repeat guest","bookings":3754,"cancellations":550,"cancellation_rate":0.1465,"cancelled_revenue_eur":100297.66},{"dimension":"special_requests","value":"1 or more","bookings":49009,"cancellations":10665,"cancellation_rate":0.2176,"cancelled_revenue_eur":5203889.45},{"dimension":"special_requests","value":"None","bookings":70199,"cancellations":33533,"cancellation_rate":0.4777,"cancelled_revenue_eur":11517947.67}],"cancel_timing":[{"hotel":"City Hotel","median_days":58.0,"share_last_week":0.1198},{"hotel":"Resort Hotel","median_days":51.0,"share_last_week":0.1166}],"model":{"split":{"fit":58722,"valid":19867,"train":78589,"test":40619},"scoring":"monthly walk-forward: each month scored by a model trained on all earlier arrivals","boosting_rounds":80,"features":["lead_time_days","weekend_nights","week_nights","adults","children","babies","previous_cancellations","previous_bookings_not_canceled","days_in_waiting_list","adr_eur","special_requests","arrival_weekday_num","is_repeated_guest","has_company","hotel","meal_plan","market_segment","distribution_channel","customer_type","deposit_type","reserved_room_type","agent"],"excluded_as_leaky":{"parking_spaces":"recorded on arrival; no cancelled booking has one","assigned_room_type":"assigned at check-in; a mismatch means the guest showed up","booking_changes":"counts changes up to arrival, so kept bookings accumulate more","country_code":"corrected at check-in; cancelled bookings keep the default (PRT)","reservation_status":"is the outcome","reservation_status_date":"is the outcome date"},"test":{"roc_auc":0.8503,"accuracy":0.7757,"precision":0.799,"recall":0.5625,"brier":0.1501,"log_loss":0.4534,"base_rate":0.3874,"majority_class_accuracy":0.6126,"n":40619},"test_with_leaky_columns":{"roc_auc":0.9124,"accuracy":0.8209,"precision":0.8176,"recall":0.6921,"brier":0.119,"log_loss":0.3589,"base_rate":0.3874,"majority_class_accuracy":0.6126,"n":40619},"test_without_special_requests":{"roc_auc":0.8268,"accuracy":0.7522,"precision":0.7561,"recall":0.5318,"brier":0.1589,"log_loss":0.474,"base_rate":0.3874,"majority_class_accuracy":0.6126,"n":40619},"random_split":{"roc_auc":0.9143,"accuracy":0.8491,"precision":0.8489,"recall":0.7229,"brier":0.1073,"log_loss":0.3394,"base_rate":0.3718,"majority_class_accuracy":0.6282,"n":29802},"random_split_with_leaky_columns":{"roc_auc":0.9563,"accuracy":0.887,"precision":0.8647,"recall":0.8251,"brier":0.08,"log_loss":0.2543,"base_rate":0.3718,"majority_class_accuracy":0.6282,"n":29802},"valid":{"roc_auc":0.8616,"accuracy":0.8034,"precision":0.8825,"recall":0.5581,"brier":0.1412,"log_loss":0.4323,"base_rate":0.3808,"majority_class_accuracy":0.6192,"n":19867},"calibration_test":[{"bin":"(-0.001, 0.1]","n":9105,"predicted":0.0676,"actual":0.0629},{"bin":"(0.1, 0.2]","n":7092,"predicted":0.1425,"actual":0.1741},{"bin":"(0.2, 0.3]","n":6395,"predicted":0.249,"actual":0.296},{"bin":"(0.3, 0.4]","n":4815,"predicted":0.3433,"actual":0.4295},{"bin":"(0.4, 0.5]","n":2136,"predicted":0.4444,"actual":0.522},{"bin":"(0.5, 0.6]","n":1177,"predicted":0.5485,"actual":0.5438},{"bin":"(0.6, 0.7]","n":1781,"predicted":0.6567,"actual":0.6401},{"bin":"(0.7, 0.8]","n":3103,"predicted":0.7446,"actual":0.7022},{"bin":"(0.8, 0.9]","n":878,"predicted":0.8376,"actual":0.861},{"bin":"(0.9, 1.0]","n":4137,"predicted":0.9792,"actual":0.9995}],"weekly_forecast":{"weeks":72,"weighted_abs_error":0.09,"total_predicted":14732.3,"total_actual":15734,"total_error":-0.0637},"feature_importance_gain":{"deposit_type":0.3771,"agent":0.1397,"lead_time_days":0.1318,"special_requests":0.0894,"previous_cancellations":0.0587,"customer_type":0.0531,"adr_eur":0.0451,"market_segment":0.024,"previous_bookings_not_canceled":0.0176,"week_nights":0.0114,"arrival_weekday_num":0.0091,"meal_plan":0.0079,"hotel":0.0079,"adults":0.0065,"weekend_nights":0.0052}},"weekly":[{"hotel":"City Hotel","week":"2016-12-26","bookings":102,"predicted":41.5038,"actual":39},{"hotel":"City Hotel","week":"2017-01-02","bookings":539,"predicted":193.1085,"actual":230},{"hotel":"City Hotel","week":"2017-01-09","bookings":528,"predicted":227.2912,"actual":251},{"hotel":"City Hotel","week":"2017-01-16","bookings":547,"predicted":199.1054,"actual":211},{"hotel":"City Hotel","week":"2017-01-23","bookings":558,"predicted":274.4162,"actual":287},{"hotel":"City Hotel","week":"2017-01-30","bookings":535,"predicted":209.7883,"actual":215},{"hotel":"City Hotel","week":"2017-02-06","bookings":549,"predicted":225.4139,"actual":223},{"hotel":"City Hotel","week":"2017-02-13","bookings":642,"predicted":216.3526,"actual":222},{"hotel":"City Hotel","week":"2017-02-20","bookings":811,"predicted":253.4928,"actual":300},{"hotel":"City Hotel","week":"2017-02-27","bookings":707,"predicted":295.8612,"actual":285},{"hotel":"City Hotel","week":"2017-03-06","bookings":683,"predicted":230.8118,"actual":231},{"hotel":"City Hotel","week":"2017-03-13","bookings":856,"predicted":360.5053,"actual":342},{"hotel":"City Hotel","week":"2017-03-20","bookings":773,"predicted":300.7041,"actual":291},{"hotel":"City Hotel","week":"2017-03-27","bookings":678,"predicted":240.2895,"actual":214},{"hotel":"City Hotel","week":"2017-04-03","bookings":999,"predicted":493.1086,"actual":510},{"hotel":"City Hotel","week":"2017-04-10","bookings":870,"predicted":371.1823,"actual":407},{"hotel":"City Hotel","week":"2017-04-17","bookings":849,"predicted":404.1852,"actual":413},{"hotel":"City Hotel","week":"2017-04-24","bookings":1029,"predicted":504.256,"actual":540},{"hotel":"City Hotel","week":"2017-05-01","bookings":1067,"predicted":497.3402,"actual":546},{"hotel":"City Hotel","week":"2017-05-08","bookings":910,"predicted":353.2891,"actual":368},{"hotel":"City Hotel","week":"2017-05-15","bookings":1189,"predicted":656.7134,"actual":681},{"hotel":"City Hotel","week":"2017-05-22","bookings":991,"predicted":417.7745,"actual":430},{"hotel":"City Hotel","week":"2017-05-29","bookings":936,"predicted":428.5487,"actual":441},{"hotel":"City Hotel","week":"2017-06-05","bookings":994,"predicted":475.5122,"actual":479},{"hotel":"City Hotel","week":"2017-06-12","bookings":852,"predicted":391.7243,"actual":378},{"hotel":"City Hotel","week":"2017-06-19","bookings":861,"predicted":372.9345,"actual":358},{"hotel":"City Hotel","week":"2017-06-26","bookings":897,"predicted":421.4646,"actual":406},{"hotel":"City Hotel","week":"2017-07-03","bookings":882,"predicted":348.7392,"actual":334},{"hotel":"City Hotel","week":"2017-07-10","bookings":869,"predicted":313.4242,"actual":313},{"hotel":"City Hotel","week":"2017-07-17","bookings":710,"predicted":273.1216,"actual":243},{"hotel":"City Hotel","week":"2017-07-24","bookings":791,"predicted":319.7786,"actual":329},{"hotel":"City Hotel","week":"2017-07-31","bookings":703,"predicted":256.2264,"actual":251},{"hotel":"City Hotel","week":"2017-08-07","bookings":715,"predicted":263.4923,"actual":273},{"hotel":"City Hotel","week":"2017-08-14","bookings":797,"predicted":307.0765,"actual":332},{"hotel":"City Hotel","week":"2017-08-21","bookings":678,"predicted":205.7759,"actual":206},{"hotel":"City Hotel","week":"2017-08-28","bookings":349,"predicted":109.7456,"actual":101},{"hotel":"Resort Hotel","week":"2016-12-26","bookings":25,"predicted":5.9458,"actual":10},{"hotel":"Resort Hotel","week":"2017-01-02","bookings":262,"predicted":47.0972,"actual":49},{"hotel":"Resort Hotel","week":"2017-01-09","bookings":247,"predicted":35.8281,"actual":38},{"hotel":"Resort Hotel","week":"2017-01-16","bookings":345,"predicted":59.1975,"actual":46},{"hotel":"Resort Hotel","week":"2017-01-23","bookings":336,"predicted":49.1918,"actual":51},{"hotel":"Resort Hotel","week":"2017-01-30","bookings":301,"predicted":47.9662,"actual":51},{"hotel":"Resort Hotel","week":"2017-02-06","bookings":372,"predicted":79.9685,"actual":95},{"hotel":"Resort Hotel","week":"2017-02-13","bookings":449,"predicted":90.5799,"actual":105},{"hotel":"Resort Hotel","week":"2017-02-20","bookings":460,"predicted":81.8559,"actual":117},{"hotel":"Resort Hotel","week":"2017-02-27","bookings":404,"predicted":94.6414,"actual":101},{"hotel":"Resort Hotel","week":"2017-03-06","bookings":364,"predicted":95.5982,"actual":104},{"hotel":"Resort Hotel","week":"2017-03-13","bookings":339,"predicted":80.1301,"actual":81},{"hotel":"Resort Hotel","week":"2017-03-20","bookings":240,"predicted":64.4992,"actual":51},{"hotel":"Resort Hotel","week":"2017-03-27","bookings":365,"predicted":111.7714,"actual":105},{"hotel":"Resort Hotel","week":"2017-04-03","bookings":439,"predicted":132.9624,"actual":144},{"hotel":"Resort Hotel","week":"2017-04-10","bookings":438,"predicted":114.4507,"actual":163},{"hotel":"Resort Hotel","week":"2017-04-17","bookings":381,"predicted":67.8953,"actual":86},{"hotel":"Resort Hotel","week":"2017-04-24","bookings":420,"predicted":80.8856,"actual":128},{"hotel":"Resort Hotel","week":"2017-05-01","bookings":403,"predicted":101.6192,"actual":146},{"hotel":"Resort Hotel","week":"2017-05-08","bookings":388,"predicted":78.5688,"actual":110},{"hotel":"Resort Hotel","week":"2017-05-15","bookings":322,"predicted":69.7598,"actual":82},{"hotel":"Resort Hotel","week":"2017-05-22","bookings":481,"predicted":117.3878,"actual":144},{"hotel":"Resort Hotel","week":"2017-05-29","bookings":467,"predicted":155.5445,"actual":183},{"hotel":"Resort Hotel","week":"2017-06-05","bookings":380,"predicted":100.6574,"actual":129},{"hotel":"Resort Hotel","week":"2017-06-12","bookings":376,"predicted":103.7534,"actual":156},{"hotel":"Resort Hotel","week":"2017-06-19","bookings":364,"predicted":106.7898,"actual":137},{"hotel":"Resort Hotel","week":"2017-06-26","bookings":396,"predicted":108.4039,"actual":150},{"hotel":"Resort Hotel","week":"2017-07-03","bookings":362,"predicted":112.2517,"actual":122},{"hotel":"Resort Hotel","week":"2017-07-10","bookings":425,"predicted":111.4797,"actual":146},{"hotel":"Resort Hotel","week":"2017-07-17","bookings":367,"predicted":115.6581,"actual":146},{"hotel":"Resort Hotel","week":"2017-07-24","bookings":392,"predicted":116.5242,"actual":156},{"hotel":"Resort Hotel","week":"2017-07-31","bookings":443,"predicted":137.3134,"actual":188},{"hotel":"Resort Hotel","week":"2017-08-07","bookings":374,"predicted":109.7234,"actual":130},{"hotel":"Resort Hotel","week":"2017-08-14","bookings":444,"predicted":128.4937,"actual":183},{"hotel":"Resort Hotel","week":"2017-08-21","bookings":392,"predicted":111.3403,"actual":142},{"hotel":"Resort Hotel","week":"2017-08-28","bookings":210,"predicted":52.5013,"actual":79}],"policy":{"period":"arrivals 2017-01-01 to 2017-08-31","currency":"EUR","assumptions_base":{"walkaway":0.2,"resale":0.3},"eligible_bookings_2017":36466,"eligible_cancellations_2017":11590,"eligible_cancelled_revenue_eur_2017":6037974.1,"chosen_threshold":0.26,"base_case":{"threshold":0.26,"flagged":16303,"flagged_share":0.4471,"cancellations_caught":8731,"catch_rate":0.7533,"gain_eur":922337.6,"loss_eur":523534.34,"net_eur":398803.26},"blanket_deposit_base_case":{"threshold":0.0,"flagged":36466,"flagged_share":1.0,"cancellations_caught":11590,"catch_rate":1.0,"gain_eur":1174080.86,"loss_eur":1373139.69,"net_eur":-199058.83},"per_hotel_base_case":{"City Hotel":{"threshold":0.26,"flagged":11904,"flagged_share":0.504,"cancellations_caught":6183,"catch_rate":0.7871,"gain_eur":632508.78,"loss_eur":350305.06,"net_eur":282203.73},"Resort Hotel":{"threshold":0.26,"flagged":4399,"flagged_share":0.3424,"cancellations_caught":2548,"catch_rate":0.6822,"gain_eur":289828.82,"loss_eur":173229.28,"net_eur":116599.53}},"sensitivity":[{"walkaway":0.05,"resale":0.0,"threshold_from_2016":0.12,"net_eur_2017":982625.42,"blanket_deposit_net_eur_2017":903813.99},{"walkaway":0.05,"resale":0.3,"threshold_from_2016":0.1,"net_eur_2017":1085399.32,"blanket_deposit_net_eur_2017":1050936.1},{"walkaway":0.05,"resale":0.6,"threshold_from_2016":0.06,"net_eur_2017":1205248.4,"blanket_deposit_net_eur_2017":1198058.21},{"walkaway":0.1,"resale":0.0,"threshold_from_2016":0.19,"net_eur_2017":655043.01,"blanket_deposit_net_eur_2017":340026.91},{"walkaway":0.1,"resale":0.3,"threshold_from_2016":0.12,"net_eur_2017":776501.99,"blanket_deposit_net_eur_2017":634271.13},{"walkaway":0.1,"resale":0.6,"threshold_from_2016":0.11,"net_eur_2017":981057.85,"blanket_deposit_net_eur_2017":928515.35},{"walkaway":0.2,"resale":0.0,"threshold_from_2016":0.46,"net_eur_2017":297413.29,"blanket_deposit_net_eur_2017":-787547.26},{"walkaway":0.2,"resale":0.3,"threshold_from_2016":0.26,"net_eur_2017":398803.26,"blanket_deposit_net_eur_2017":-199058.83},{"walkaway":0.2,"resale":0.6,"threshold_from_2016":0.16,"net_eur_2017":609982.59,"blanket_deposit_net_eur_2017":389429.61},{"walkaway":0.3,"resale":0.0,"threshold_from_2016":0.57,"net_eur_2017":146881.16,"blanket_deposit_net_eur_2017":-1915121.44},{"walkaway":0.3,"resale":0.3,"threshold_from_2016":0.49,"net_eur_2017":219393.2,"blanket_deposit_net_eur_2017":-1032388.78},{"walkaway":0.3,"resale":0.6,"threshold_from_2016":0.26,"net_eur_2017":358301.68,"blanket_deposit_net_eur_2017":-149656.12}],"threshold_curve_base_case":[{"threshold":0.0,"flagged":36466,"flagged_share":1.0,"cancellations_caught":11590,"catch_rate":1.0,"gain_eur":1174080.86,"loss_eur":1373139.69,"net_eur":-199058.83},{"threshold":0.01,"flagged":36466,"flagged_share":1.0,"cancellations_caught":11590,"catch_rate":1.0,"gain_eur":1174080.86,"loss_eur":1373139.69,"net_eur":-199058.83},{"threshold":0.02,"flagged":36466,"flagged_share":1.0,"cancellations_caught":11590,"catch_rate":1.0,"gain_eur":1174080.86,"loss_eur":1373139.69,"net_eur":-199058.83},{"threshold":0.03,"flagged":36369,"flagged_share":0.9973,"cancellations_caught":11590,"catch_rate":1.0,"gain_eur":1174080.86,"loss_eur":1370849.74,"net_eur":-196768.88},{"threshold":0.04,"flagged":35563,"flagged_share":0.9752,"cancellations_caught":11574,"catch_rate":0.9986,"gain_eur":1173233.02,"loss_eur":1345280.67,"net_eur":-172047.65},{"threshold":0.05,"flagged":34667,"flagged_share":0.9507,"cancellations_caught":11536,"catch_rate":0.9953,"gain_eur":1171073.04,"loss_eur":1314043.74,"net_eur":-142970.7},{"threshold":0.06,"flagged":33242,"flagged_share":0.9116,"cancellations_caught":11481,"catch_rate":0.9906,"gain_eur":1167610.74,"loss_eur":1269025.43,"net_eur":-101414.69},{"threshold":0.07,"flagged":31750,"flagged_share":0.8707,"cancellations_caught":11402,"catch_rate":0.9838,"gain_eur":1161392.66,"loss_eur":1217648.65,"net_eur":-56255.99},{"threshold":0.08,"flagged":30084,"flagged_share":0.825,"cancellations_caught":11281,"catch_rate":0.9733,"gain_eur":1152026.13,"loss_eur":1151066.66,"net_eur":959.47},{"threshold":0.09,"flagged":28586,"flagged_share":0.7839,"cancellations_caught":11167,"catch_rate":0.9635,"gain_eur":1142571.32,"loss_eur":1086355.12,"net_eur":56216.2},{"threshold":0.1,"flagged":27365,"flagged_share":0.7504,"cancellations_caught":11021,"catch_rate":0.9509,"gain_eur":1131261.21,"loss_eur":1031893.45,"net_eur":99367.76},{"threshold":0.11,"flagged":26454,"flagged_share":0.7254,"cancellations_caught":10921,"catch_rate":0.9423,"gain_eur":1123937.69,"loss_eur":991802.18,"net_eur":132135.51},{"threshold":0.12,"flagged":25610,"flagged_share":0.7023,"cancellations_caught":10793,"catch_rate":0.9312,"gain_eur":1114741.59,"loss_eur":955164.6,"net_eur":159576.99},{"threshold":0.13,"flagged":24574,"flagged_share":0.6739,"cancellations_caught":10644,"catch_rate":0.9184,"gain_eur":1103275.14,"loss_eur":910974.62,"net_eur":192300.52},{"threshold":0.14,"flagged":23679,"flagged_share":0.6493,"cancellations_caught":10488,"catch_rate":0.9049,"gain_eur":1089791.03,"loss_eur":868464.91,"net_eur":221326.12},{"threshold":0.15,"flagged":22937,"flagged_share":0.629,"cancellations_caught":10364,"catch_rate":0.8942,"gain_eur":1078659.66,"loss_eur":829969.65,"net_eur":248690.01},{"threshold":0.16,"flagged":22290,"flagged_share":0.6113,"cancellations_caught":10226,"catch_rate":0.8823,"gain_eur":1065100.73,"loss_eur":796456.73,"net_eur":268643.99},{"threshold":0.17,"flagged":21714,"flagged_share":0.5955,"cancellations_caught":10106,"catch_rate":0.872,"gain_eur":1055142.09,"loss_eur":766566.12,"net_eur":288575.96},{"threshold":0.18,"flagged":21215,"flagged_share":0.5818,"cancellations_caught":10008,"catch_rate":0.8635,"gain_eur":1046272.81,"loss_eur":739293.15,"net_eur":306979.66},{"threshold":0.19,"flagged":20707,"flagged_share":0.5678,"cancellations_caught":9879,"catch_rate":0.8524,"gain_eur":1035924.61,"loss_eur":714521.04,"net_eur":321403.57},{"threshold":0.2,"flagged":20280,"flagged_share":0.5561,"cancellations_caught":9792,"catch_rate":0.8449,"gain_eur":1027478.99,"loss_eur":691117.65,"net_eur":336361.34},{"threshold":0.21,"flagged":19657,"flagged_share":0.5391,"cancellations_caught":9609,"catch_rate":0.8291,"gain_eur":1012245.79,"loss_eur":665851.08,"net_eur":346394.71},{"threshold":0.22,"flagged":19028,"flagged_share":0.5218,"cancellations_caught":9482,"catch_rate":0.8181,"gain_eur":999023.15,"loss_eur":636727.62,"net_eur":362295.53},{"threshold":0.23,"flagged":18285,"flagged_share":0.5014,"cancellations_caught":9286,"catch_rate":0.8012,"gain_eur":980112.62,"loss_eur":608364.6,"net_eur":371748.02},{"threshold":0.24,"flagged":17568,"flagged_share":0.4818,"cancellations_caught":9086,"catch_rate":0.784,"gain_eur":959512.93,"loss_eur":577711.18,"net_eur":381801.75},{"threshold":0.25,"flagged":16893,"flagged_share":0.4633,"cancellations_caught":8912,"catch_rate":0.7689,"gain_eur":941541.43,"loss_eur":549353.69,"net_eur":392187.74},{"threshold":0.26,"flagged":16303,"flagged_share":0.4471,"cancellations_caught":8731,"catch_rate":0.7533,"gain_eur":922337.6,"loss_eur":523534.34,"net_eur":398803.26},{"threshold":0.27,"flagged":15709,"flagged_share":0.4308,"cancellations_caught":8524,"catch_rate":0.7355,"gain_eur":901562.75,"loss_eur":499389.59,"net_eur":402173.16},{"threshold":0.28,"flagged":15133,"flagged_share":0.415,"cancellations_caught":8344,"catch_rate":0.7199,"gain_eur":881916.35,"loss_eur":473555.65,"net_eur":408360.7},{"threshold":0.29,"flagged":14545,"flagged_share":0.3989,"cancellations_caught":8128,"catch_rate":0.7013,"gain_eur":858955.22,"loss_eur":449537.36,"net_eur":409417.86},{"threshold":0.3,"flagged":13890,"flagged_share":0.3809,"cancellations_caught":7904,"catch_rate":0.682,"gain_eur":835272.54,"loss_eur":423476.03,"net_eur":411796.51},{"threshold":0.31,"flagged":13263,"flagged_share":0.3637,"cancellations_caught":7671,"catch_rate":0.6619,"gain_eur":810432.06,"loss_eur":397016.34,"net_eur":413415.72},{"threshold":0.32,"flagged":12575,"flagged_share":0.3448,"cancellations_caught":7408,"catch_rate":0.6392,"gain_eur":782500.91,"loss_eur":369094.04,"net_eur":413406.87},{"threshold":0.33,"flagged":12014,"flagged_share":0.3295,"cancellations_caught":7185,"catch_rate":0.6199,"gain_eur":758348.94,"loss_eur":345975.64,"net_eur":412373.31},{"threshold":0.34,"flagged":11463,"flagged_share":0.3143,"cancellations_caught":6952,"catch_rate":0.5998,"gain_eur":732637.26,"loss_eur":323825.52,"net_eur":408811.74},{"threshold":0.35,"flagged":10976,"flagged_share":0.301,"cancellations_caught":6719,"catch_rate":0.5797,"gain_eur":707128.04,"loss_eur":305914.35,"net_eur":401213.69},{"threshold":0.36,"flagged":10546,"flagged_share":0.2892,"cancellations_caught":6533,"catch_rate":0.5637,"gain_eur":686619.82,"loss_eur":288149.51,"net_eur":398470.31},{"threshold":0.37,"flagged":10212,"flagged_share":0.28,"cancellations_caught":6384,"catch_rate":0.5508,"gain_eur":670545.67,"loss_eur":273267.43,"net_eur":397278.24},{"threshold":0.38,"flagged":9757,"flagged_share":0.2676,"cancellations_caught":6207,"catch_rate":0.5355,"gain_eur":651197.17,"loss_eur":253324.41,"net_eur":397872.76},{"threshold":0.39,"flagged":9390,"flagged_share":0.2575,"cancellations_caught":6010,"catch_rate":0.5186,"gain_eur":630279.27,"loss_eur":239459.79,"net_eur":390819.49},{"threshold":0.4,"flagged":9078,"flagged_share":0.2489,"cancellations_caught":5839,"catch_rate":0.5038,"gain_eur":614198.96,"loss_eur":228095.81,"net_eur":386103.15},{"threshold":0.41,"flagged":8797,"flagged_share":0.2412,"cancellations_caught":5695,"catch_rate":0.4914,"gain_eur":600194.96,"loss_eur":217961.76,"net_eur":382233.2},{"threshold":0.42,"flagged":8539,"flagged_share":0.2342,"cancellations_caught":5557,"catch_rate":0.4795,"gain_eur":584785.33,"loss_eur":207620.0,"net_eur":377165.33},{"threshold":0.43,"flagged":8273,"flagged_share":0.2269,"cancellations_caught":5435,"catch_rate":0.4689,"gain_eur":571958.15,"loss_eur":196102.39,"net_eur":375855.76},{"threshold":0.44,"flagged":8052,"flagged_share":0.2208,"cancellations_caught":5330,"catch_rate":0.4599,"gain_eur":561419.3,"loss_eur":187135.98,"net_eur":374283.32},{"threshold":0.45,"flagged":7843,"flagged_share":0.2151,"cancellations_caught":5229,"catch_rate":0.4512,"gain_eur":552375.68,"loss_eur":178462.65,"net_eur":373913.03},{"threshold":0.46,"flagged":7639,"flagged_share":0.2095,"cancellations_caught":5117,"catch_rate":0.4415,"gain_eur":541380.57,"loss_eur":170777.09,"net_eur":370603.48},{"threshold":0.47,"flagged":7446,"flagged_share":0.2042,"cancellations_caught":5018,"catch_rate":0.433,"gain_eur":531614.0,"loss_eur":164399.98,"net_eur":367214.02},{"threshold":0.48,"flagged":7251,"flagged_share":0.1988,"cancellations_caught":4907,"catch_rate":0.4234,"gain_eur":521848.63,"loss_eur":158412.42,"net_eur":363436.21},{"threshold":0.49,"flagged":7096,"flagged_share":0.1946,"cancellations_caught":4817,"catch_rate":0.4156,"gain_eur":513141.21,"loss_eur":153070.24,"net_eur":360070.97},{"threshold":0.5,"flagged":6945,"flagged_share":0.1905,"cancellations_caught":4726,"catch_rate":0.4078,"gain_eur":505479.18,"loss_eur":149154.67,"net_eur":356324.51},{"threshold":0.51,"flagged":6779,"flagged_share":0.1859,"cancellations_caught":4629,"catch_rate":0.3994,"gain_eur":497250.11,"loss_eur":145035.51,"net_eur":352214.6},{"threshold":0.52,"flagged":6670,"flagged_share":0.1829,"cancellations_caught":4563,"catch_rate":0.3937,"gain_eur":490662.82,"loss_eur":142057.51,"net_eur":348605.31},{"threshold":0.53,"flagged":6558,"flagged_share":0.1798,"cancellations_caught":4520,"catch_rate":0.39,"gain_eur":486836.86,"loss_eur":137576.42,"net_eur":349260.45},{"threshold":0.54,"flagged":6446,"flagged_share":0.1768,"cancellations_caught":4468,"catch_rate":0.3855,"gain_eur":482803.11,"loss_eur":133789.79,"net_eur":349013.32},{"threshold":0.55,"flagged":6324,"flagged_share":0.1734,"cancellations_caught":4416,"catch_rate":0.381,"gain_eur":478301.58,"loss_eur":128721.05,"net_eur":349580.53},{"threshold":0.56,"flagged":6211,"flagged_share":0.1703,"cancellations_caught":4352,"catch_rate":0.3755,"gain_eur":472688.68,"loss_eur":125036.1,"net_eur":347652.58},{"threshold":0.57,"flagged":6114,"flagged_share":0.1677,"cancellations_caught":4294,"catch_rate":0.3705,"gain_eur":467285.53,"loss_eur":122263.72,"net_eur":345021.81},{"threshold":0.58,"flagged":6012,"flagged_share":0.1649,"cancellations_caught":4234,"catch_rate":0.3653,"gain_eur":462334.94,"loss_eur":119279.49,"net_eur":343055.45},{"threshold":0.59,"flagged":5921,"flagged_share":0.1624,"cancellations_caught":4182,"catch_rate":0.3608,"gain_eur":457791.26,"loss_eur":116912.43,"net_eur":340878.84},{"threshold":0.6,"flagged":5772,"flagged_share":0.1583,"cancellations_caught":4088,"catch_rate":0.3527,"gain_eur":448344.38,"loss_eur":113631.97,"net_eur":334712.42},{"threshold":0.61,"flagged":5658,"flagged_share":0.1552,"cancellations_caught":4022,"catch_rate":0.347,"gain_eur":442020.77,"loss_eur":110719.33,"net_eur":331301.44},{"threshold":0.62,"flagged":5488,"flagged_share":0.1505,"cancellations_caught":3912,"catch_rate":0.3375,"gain_eur":431217.5,"loss_eur":106762.43,"net_eur":324455.07},{"threshold":0.63,"flagged":5345,"flagged_share":0.1466,"cancellations_caught":3824,"catch_rate":0.3299,"gain_eur":423586.82,"loss_eur":103723.64,"net_eur":319863.18},{"threshold":0.64,"flagged":5181,"flagged_share":0.1421,"cancellations_caught":3731,"catch_rate":0.3219,"gain_eur":413758.32,"loss_eur":97738.02,"net_eur":316020.3},{"threshold":0.65,"flagged":5038,"flagged_share":0.1382,"cancellations_caught":3644,"catch_rate":0.3144,"gain_eur":404543.01,"loss_eur":94309.05,"net_eur":310233.96},{"threshold":0.66,"flagged":4875,"flagged_share":0.1337,"cancellations_caught":3538,"catch_rate":0.3053,"gain_eur":393925.07,"loss_eur":90915.96,"net_eur":303009.11},{"threshold":0.67,"flagged":4722,"flagged_share":0.1295,"cancellations_caught":3440,"catch_rate":0.2968,"gain_eur":382786.72,"loss_eur":88055.42,"net_eur":294731.3},{"threshold":0.68,"flagged":4538,"flagged_share":0.1244,"cancellations_caught":3316,"catch_rate":0.2861,"gain_eur":369022.58,"loss_eur":84180.94,"net_eur":284841.64},{"threshold":0.69,"flagged":4284,"flagged_share":0.1175,"cancellations_caught":3140,"catch_rate":0.2709,"gain_eur":348542.36,"loss_eur":79363.03,"net_eur":269179.33},{"threshold":0.7,"flagged":4000,"flagged_share":0.1097,"cancellations_caught":2952,"catch_rate":0.2547,"gain_eur":326974.17,"loss_eur":72766.01,"net_eur":254208.16},{"threshold":0.71,"flagged":3650,"flagged_share":0.1001,"cancellations_caught":2722,"catch_rate":0.2349,"gain_eur":298805.27,"loss_eur":65029.58,"net_eur":233775.69},{"threshold":0.72,"flagged":3303,"flagged_share":0.0906,"cancellations_caught":2482,"catch_rate":0.2142,"gain_eur":271077.4,"loss_eur":57597.39,"net_eur":213480.01},{"threshold":0.73,"flagged":2901,"flagged_share":0.0796,"cancellations_caught":2227,"catch_rate":0.1921,"gain_eur":241309.54,"loss_eur":47853.58,"net_eur":193455.96},{"threshold":0.74,"flagged":2509,"flagged_share":0.0688,"cancellations_caught":1966,"catch_rate":0.1696,"gain_eur":211137.62,"loss_eur":38203.79,"net_eur":172933.83},{"threshold":0.75,"flagged":2169,"flagged_share":0.0595,"cancellations_caught":1718,"catch_rate":0.1482,"gain_eur":182970.2,"loss_eur":31998.41,"net_eur":150971.79},{"threshold":0.76,"flagged":1876,"flagged_share":0.0514,"cancellations_caught":1514,"catch_rate":0.1306,"gain_eur":157850.98,"loss_eur":25269.49,"net_eur":132581.49},{"threshold":0.77,"flagged":1570,"flagged_share":0.0431,"cancellations_caught":1283,"catch_rate":0.1107,"gain_eur":133032.02,"loss_eur":20468.37,"net_eur":112563.66},{"threshold":0.78,"flagged":1314,"flagged_share":0.036,"cancellations_caught":1092,"catch_rate":0.0942,"gain_eur":112393.12,"loss_eur":16368.3,"net_eur":96024.82},{"threshold":0.79,"flagged":1100,"flagged_share":0.0302,"cancellations_caught":929,"catch_rate":0.0802,"gain_eur":95043.55,"loss_eur":12702.8,"net_eur":82340.75},{"threshold":0.8,"flagged":898,"flagged_share":0.0246,"cancellations_caught":774,"catch_rate":0.0668,"gain_eur":78328.58,"loss_eur":9245.16,"net_eur":69083.42},{"threshold":0.81,"flagged":730,"flagged_share":0.02,"cancellations_caught":643,"catch_rate":0.0555,"gain_eur":64396.14,"loss_eur":6090.24,"net_eur":58305.9},{"threshold":0.82,"flagged":626,"flagged_share":0.0172,"cancellations_caught":565,"catch_rate":0.0487,"gain_eur":55273.3,"loss_eur":4212.2,"net_eur":51061.1},{"threshold":0.83,"flagged":523,"flagged_share":0.0143,"cancellations_caught":484,"catch_rate":0.0418,"gain_eur":46686.76,"loss_eur":2525.76,"net_eur":44161.0},{"threshold":0.84,"flagged":391,"flagged_share":0.0107,"cancellations_caught":363,"catch_rate":0.0313,"gain_eur":34787.98,"loss_eur":1879.82,"net_eur":32908.17},{"threshold":0.85,"flagged":306,"flagged_share":0.0084,"cancellations_caught":288,"catch_rate":0.0248,"gain_eur":27622.14,"loss_eur":1191.09,"net_eur":26431.05},{"threshold":0.86,"flagged":242,"flagged_share":0.0066,"cancellations_caught":230,"catch_rate":0.0198,"gain_eur":21423.85,"loss_eur":645.89,"net_eur":20777.96},{"threshold":0.87,"flagged":145,"flagged_share":0.004,"cancellations_caught":138,"catch_rate":0.0119,"gain_eur":12772.66,"loss_eur":440.33,"net_eur":12332.33},{"threshold":0.88,"flagged":72,"flagged_share":0.002,"cancellations_caught":68,"catch_rate":0.0059,"gain_eur":6066.74,"loss_eur":282.45,"net_eur":5784.29},{"threshold":0.89,"flagged":39,"flagged_share":0.0011,"cancellations_caught":37,"catch_rate":0.0032,"gain_eur":2955.1,"loss_eur":164.64,"net_eur":2790.46},{"threshold":0.9,"flagged":23,"flagged_share":0.0006,"cancellations_caught":21,"catch_rate":0.0018,"gain_eur":1611.62,"loss_eur":164.64,"net_eur":1446.98},{"threshold":0.91,"flagged":16,"flagged_share":0.0004,"cancellations_caught":15,"catch_rate":0.0013,"gain_eur":1182.09,"loss_eur":109.2,"net_eur":1072.89},{"threshold":0.92,"flagged":5,"flagged_share":0.0001,"cancellations_caught":4,"catch_rate":0.0003,"gain_eur":352.9,"loss_eur":109.2,"net_eur":243.7},{"threshold":0.93,"flagged":3,"flagged_share":0.0001,"cancellations_caught":2,"catch_rate":0.0002,"gain_eur":233.22,"loss_eur":109.2,"net_eur":124.02},{"threshold":0.94,"flagged":2,"flagged_share":0.0001,"cancellations_caught":1,"catch_rate":0.0001,"gain_eur":187.14,"loss_eur":109.2,"net_eur":77.94},{"threshold":0.95,"flagged":2,"flagged_share":0.0001,"cancellations_caught":1,"catch_rate":0.0001,"gain_eur":187.14,"loss_eur":109.2,"net_eur":77.94},{"threshold":0.96,"flagged":0,"flagged_share":0.0,"cancellations_caught":0,"catch_rate":0.0,"gain_eur":0.0,"loss_eur":0.0,"net_eur":0.0},{"threshold":0.97,"flagged":0,"flagged_share":0.0,"cancellations_caught":0,"catch_rate":0.0,"gain_eur":0.0,"loss_eur":0.0,"net_eur":0.0},{"threshold":0.98,"flagged":0,"flagged_share":0.0,"cancellations_caught":0,"catch_rate":0.0,"gain_eur":0.0,"loss_eur":0.0,"net_eur":0.0},{"threshold":0.99,"flagged":0,"flagged_share":0.0,"cancellations_caught":0,"catch_rate":0.0,"gain_eur":0.0,"loss_eur":0.0,"net_eur":0.0},{"threshold":1.0,"flagged":0,"flagged_share":0.0,"cancellations_caught":0,"catch_rate":0.0,"gain_eur":0.0,"loss_eur":0.0,"net_eur":0.0}]}};
+const T = D.totals, M = D.model, P = D.policy, Q = D.quality, DBT = D.dbt;
+const REPO = "https://github.com/Yahia20/hotel-revenue-analytics";
+const el = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s).replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c]));
+
+/* ---------- language ---------- */
+const params = new URLSearchParams(location.search);
+let LANG = params.get("lang") || (() => { try { return localStorage.getItem("lang"); } catch (e) { return null; } })()
+  || ((navigator.language || "").startsWith("ar") ? "ar" : "en");
+if (!["en", "ar"].includes(LANG)) LANG = "en";
+const AR = () => LANG === "ar";
+const loc = () => AR() ? "ar-u-nu-latn" : "en-US";
+
+const fmt = {
+  int: v => Math.round(v).toLocaleString(loc()),
+  pct: (v, d = 0) => (v * 100).toFixed(d) + "%",
+  eur: v => AR() ? `${Math.round(v).toLocaleString(loc())} يورو` : "€" + Math.round(v).toLocaleString("en-US"),
+  eurShort: v => {
+    const sign = v < 0 ? "−" : "", a = Math.abs(v);
+    if (a < 500) return AR() ? "0 يورو" : "€0";
+    const [num, unit] = a >= 1e6 ? [(a / 1e6).toFixed(1), ["M", "مليون"]] : [Math.round(a / 1000).toLocaleString(loc()), ["k", "ألف"]];
+    // In Arabic the signed number is isolated as left-to-right so the minus stays in front of it.
+    return AR() ? `⁦${sign}${num}⁩ ${unit[1]} يورو` : `${sign}€${num}${unit[0]}`;
+  },
+  month: s => new Date(s.slice(0, 10) + "T00:00:00").toLocaleString(loc(), {month: "short", year: "numeric"}),
+  day: s => new Date(s.slice(0, 10) + "T00:00:00").toLocaleString(loc(), {day: "numeric", month: "short"}),
+};
+
+const VALUE_NAMES = {
+  "City Hotel": ["City hotel", "فندق المدينة"],
+  "Resort Hotel": ["Resort", "المنتجع"],
+  "0-7 days": ["0–7 days before", "قبلها بـ 0–7 أيام"],
+  "8-30 days": ["8–30 days before", "قبلها بـ 8–30 يومًا"],
+  "31-90 days": ["1–3 months before", "قبلها بـ 1–3 أشهر"],
+  "91-180 days": ["3–6 months before", "قبلها بـ 3–6 أشهر"],
+  "181-365 days": ["6–12 months before", "قبلها بـ 6–12 شهرًا"],
+  "365+ days": ["Over a year before", "قبلها بأكثر من سنة"],
+  "No Deposit": ["No deposit", "بدون عربون"],
+  "Non Refund": ["Paid, non-refundable", "مدفوع وغير مسترد"],
+  "Refundable": ["Paid, refundable", "مدفوع ومسترد"],
+  "Groups": ["Groups", "مجموعات"],
+  "Online TA": ["Booking websites", "مواقع الحجز"],
+  "Offline TA/TO": ["Travel agents", "وكلاء السفر"],
+  "Corporate": ["Companies", "شركات"],
+  "Direct": ["Direct with the hotel", "مباشر مع الفندق"],
+  "None": ["No", "لا"],
+  "1 or more": ["Yes", "نعم"],
+  "Transient": ["Individual guest", "ضيف فردي"],
+  "Transient-Party": ["Individual, linked to a group", "فردي مرتبط بمجموعة"],
+  "Contract": ["Under a contract", "بموجب عقد"],
+  "Group": ["Group", "مجموعة"],
+};
+const nameOf = v => (VALUE_NAMES[v] || [v, v])[AR() ? 1 : 0];
+
+const LEAK_WHY = {
+  parking_spaces: ["Recorded when the guest arrives. No cancelled booking has one.", "يُسجَّل عند وصول الضيف، فلا يوجد حجز ملغى فيه موقف سيارة."],
+  assigned_room_type: ["The room is assigned at check-in.", "الغرفة تُحدَّد عند تسجيل الوصول."],
+  booking_changes: ["Counts changes made up to the arrival day.", "يعدّ التعديلات حتى يوم الوصول."],
+  country_code: ["Corrected at check-in. Cancelled bookings keep the default.", "تُصحَّح عند الوصول، والحجوزات الملغاة تبقى على القيمة الافتراضية."],
+  reservation_status: ["This is the outcome itself.", "هذا هو الناتج نفسه."],
+  reservation_status_date: ["This is the date of the outcome.", "هذا هو تاريخ الناتج."],
+};
+
+/* ---------- small builders ---------- */
+function table(cols, rows) {
+  const head = cols.map(c => `<th class="${c.num ? "num" : ""}">${esc(c.label)}</th>`).join("");
+  const body = rows.map(r => "<tr>" + cols.map(c => `<td class="${c.num ? "num" : ""}">${esc(c.f ? c.f(r[c.key], r) : r[c.key])}</td>`).join("") + "</tr>").join("");
+  return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+function tiles(id, items) {
+  el(id).innerHTML = items.map(t => `<div class="tile"><div class="label">${t.label}</div><div class="value ${t.cls || ""}">${t.value}</div>${t.note ? `<div class="note">${t.note}</div>` : ""}</div>`).join("");
+}
+const setText = (map) => Object.entries(map).forEach(([id, v]) => { el(id).innerHTML = v; });
+
+const drv = dim => D.drivers.filter(r => r.dimension === dim);
+const timing = Object.fromEntries(D.cancel_timing.map(r => [r.hotel, r]));
+const base = P.base_case, blanket = P.blanket_deposit_base_case, A = P.assumptions_base;
+const sensNets = P.sensitivity.map(s => s.net_eur_2017);
+const months = D.monthly.length / 2;
+
+/* ---------- text ---------- */
+function renderText() {
+  const ar = AR();
+  document.documentElement.lang = LANG;
+  // Direction goes on <main>, not <html>: Plotly measures text in a hidden element on <body>, and an
+  // RTL <body> makes it clip axis labels.
+  document.querySelector("main").dir = ar ? "rtl" : "ltr";
+  document.title = ar ? "تحليل إلغاء حجوزات الفنادق" : "Hotel Cancellation Analytics";
+  el("lang-toggle").textContent = ar ? "English" : "العربية";
+  el("theme-toggle").textContent = ar ? "فاتح / داكن" : "Light / dark";
+  document.querySelectorAll(".sum-numbers").forEach(s => s.textContent = ar ? "اعرض الأرقام" : "Show the numbers");
+
+  setText({
+    "h-title": ar ? "إلغاء حجوزات الفنادق: أين تذهب الأموال؟" : "Hotel cancellations: where does the money go?",
+    "h-sub": ar
+      ? `حلّلنا ${fmt.int(T.bookings)} حجزًا في فندقين لنجيب عن ثلاثة أسئلة: كم تكلّف الإلغاءات، ومن الذي يلغي، وماذا يمكن للفندق أن يفعل.`
+      : `We analysed ${fmt.int(T.bookings)} bookings at two hotels to answer three questions: what cancellations cost, who cancels, and what the hotel can do about it.`,
+    "h-meta": ar
+      ? `البيانات: فندقان في البرتغال، الوصول من ${fmt.month(T.first_arrival)} إلى ${fmt.month(T.last_arrival)}، والمبالغ باليورو. بيانات عامة منشورة (Antonio وAlmeida وNunes، 2019).`
+      : `Data: two hotels in Portugal, arrivals ${fmt.month(T.first_arrival)} to ${fmt.month(T.last_arrival)}, amounts in euros. Public dataset (Antonio, Almeida & Nunes, 2019).`,
+
+    "s0-h": ar ? "الخلاصة" : "The short answer",
+    "s1-h": ar ? "1. ما حجم المشكلة؟" : "1. How big is the problem?",
+    "s1-p": ar
+      ? `يُلغى ${fmt.pct(T.cancellation_rate)} من الحجوزات. الغرفة المحجوزة لا تُعرض للبيع حتى يلغي الضيف، فقد تبقى فارغة.`
+      : `${fmt.pct(T.cancellation_rate)} of bookings are cancelled. A booked room is held off sale until the guest cancels, so it can end up empty.`,
+    "c-rate-h": ar ? "نسبة الإلغاء كل شهر" : "Share of bookings cancelled, each month",
+    "c-rate-s": ar ? "حسب شهر الوصول، لكل فندق" : "By month of arrival, for each hotel",
+    "c-lost-h": ar ? "قيمة الحجوزات الملغاة كل شهر" : "Value of cancelled bookings, each month",
+    "c-lost-s": ar ? "سعر الليلة × عدد الليالي، قبل أي إعادة بيع للغرفة" : "Nightly price × nights, before any resale of the room",
+
+    "s2-h": ar ? "2. من الذي يلغي؟" : "2. Who cancels?",
+    "s2-p": ar
+      ? `كل عمود يوضّح نسبة الحجوزات التي أُلغيت. الخط الرمادي هو المتوسط (${fmt.pct(T.cancellation_rate)}). الفندق يعرف كل هذه المعلومات لحظة الحجز.`
+      : `Each bar shows the share of bookings that were cancelled. The grey line is the average (${fmt.pct(T.cancellation_rate)}). The hotel knows all of this at the moment of booking.`,
+
+    "s3-h": ar ? "3. هل يمكن توقّع الإلغاء؟" : "3. Can we predict a cancellation?",
+    "s3-p": ar
+      ? "نعم. بنينا نموذجًا، وهو برنامج يتعلّم من الحجوزات السابقة، يعطي كل حجز جديد درجة خطر من 0% إلى 100%. ثم اختبرناه على حجوزات 2017 التي لم يرها أثناء التعلّم."
+      : "Yes. We built a model, a program that learns from past bookings, that gives every new booking a risk score from 0% to 100%. We then tested it on 2017 bookings it had not seen while learning.",
+    "c-week-h": ar ? "عدد الإلغاءات كل أسبوع في 2017: المتوقَّع مقابل الفعلي" : "Cancellations each week in 2017: predicted vs actual",
+    "c-week-s": ar ? "الأعمدة: ما حدث فعلًا. الخط: ما توقّعه النموذج مسبقًا. يستخدم الفندق هذا الرقم ليقرر كم غرفة إضافية يمكنه بيعها." : "Bars: what happened. Line: what the model predicted in advance. A hotel uses this number to decide how many extra rooms it can safely sell.",
+
+    "s4-h": ar ? "4. ماذا يجب أن يفعل الفندق؟" : "4. What should the hotel do?",
+    "reco": ar
+      ? `<b>التوصية:</b> اطلب الليلة الأولى مقدمًا، غير مستردّة، فقط من الحجوزات التي درجة خطرها ${fmt.pct(P.chosen_threshold)} أو أكثر. أبقِ بقية الحجوزات بدون عربون.`
+      : `<b>Recommendation:</b> ask for the first night in advance, non-refundable, only when a booking's risk score is ${fmt.pct(P.chosen_threshold)} or higher. Keep every other booking deposit-free.`,
+    "c-compare-h": ar ? "صافي النتيجة خلال 8 أشهر من 2017" : "Net result over 8 months of 2017",
+    "c-compare-s": ar ? "مقارنةً بعدم طلب أي عربون" : "Compared with asking no one for a deposit",
+    "t-sens-h": ar ? "ماذا لو تصرّف الضيوف بشكل مختلف؟" : "What if guests react differently?",
+    "t-sens-s": ar
+      ? "لا نعرف بالضبط كم ضيفًا سيرفض العربون، لذلك جرّبنا 12 احتمالًا. كل خانة هي صافي ربح التوصية."
+      : "Nobody knows exactly how many guests will refuse a deposit, so we tried 12 possibilities. Each cell is the net gain from the recommendation.",
+    "t-sens-n": ar
+      ? `كل الخانات موجبة: التوصية تربح في الاحتمالات الـ 12 كلها، من ${fmt.eurShort(Math.min(...sensNets))} إلى ${fmt.eurShort(Math.max(...sensNets))}.`
+      : `Every cell is positive: the recommendation makes money in all 12 cases, from ${fmt.eurShort(Math.min(...sensNets))} to ${fmt.eurShort(Math.max(...sensNets))}.`,
+
+    "s5-h": ar ? "5. لماذا يمكن الوثوق بهذه الأرقام؟" : "5. Why you can trust these numbers",
+    "s6-h": ar ? "من المهم أن تعرف" : "Good to know",
+
+    "tech-h": ar ? "التفاصيل التقنية (لفرق البيانات)" : "Technical details (for data teams)",
+    "tech-p": ar
+      ? "النموذج: LightGBM. التقييم: كل شهر من يناير إلى أغسطس 2017 قيّمه نموذج أُعيد تدريبه على كل الوصولات السابقة لذلك الشهر (walk-forward)."
+      : "Model: LightGBM. Evaluation: each month of Jan–Aug 2017 is scored by a model retrained on every arrival before that month (monthly walk-forward).",
+    "c-leak-h": ar ? "لماذا الدقة 77.6% وليست 99%؟" : "Why the accuracy is 77.6%, not 99%",
+    "c-leak-s": ar ? "دقة النموذج نفسه تحت طرق اختبار مختلفة" : "Accuracy of the same model under different test setups",
+    "c-calib-h": ar ? "هل الاحتمالات صادقة؟ (Calibration)" : "Are the probabilities honest? (calibration)",
+    "c-calib-s": ar ? "حجوزات 2017 مجمّعة حسب الخطر المتوقَّع، مقابل نسبة الإلغاء الفعلية" : "2017 bookings grouped by predicted risk, against the share that actually cancelled",
+    "c-curve-h": ar ? "صافي الربح حسب حدّ الخطر (Threshold)" : "Net result by risk threshold",
+    "c-curve-s": ar ? "الافتراضات الأساسية. النقطة هي الحد المختار من بيانات 2016." : "Base-case assumptions. The marker is the threshold chosen on 2016 data.",
+    "t-dq-h": ar ? "مشكلات البيانات وكيف عولجت" : "Data issues and how they were handled",
+    "t-dq-s": ar
+      ? `مستودع البيانات مبني بـ dbt على DuckDB: ${DBT.models} جداول و${DBT.tests} اختبارًا في كل تشغيل، ${DBT.failed} منها فاشل.`
+      : `Warehouse built with dbt on DuckDB: ${DBT.models} models and ${DBT.tests} data tests on every run, ${DBT.failed} failing.`,
+    "method-h": ar ? "الطريقة والقيود" : "Method and limits",
+    "tech-links": ar
+      ? `<a href="dbt-docs.html">توثيق dbt: مسار البيانات وكل اختبار</a> · <a href="${REPO}">الكود على GitHub</a>`
+      : `<a href="dbt-docs.html">dbt docs: data lineage and every test</a> · <a href="${REPO}">Code on GitHub</a>`,
+    "footer": ar
+      ? `كل رقم في هذه الصفحة ناتج تلقائيًا من البيانات الأصلية، ولا شيء مكتوب يدويًا. <a href="${REPO}">الكود وطريقة إعادة التشغيل على GitHub</a>.`
+      : `Every number on this page is generated from the source data. Nothing is typed by hand. <a href="${REPO}">Code and how to rerun it on GitHub</a>.`,
+  });
+
+  el("answer").innerHTML = (ar ? [
+    `<b>يُلغى ${fmt.pct(T.cancellation_rate)} من الحجوزات.</b> قيمتها ${fmt.eurShort(T.cancelled_revenue)} خلال ${months} شهرًا، مقابل ${fmt.eurShort(T.realized_revenue)} حصّلها الفندقان فعلًا.`,
+    `<b>يمكن معرفة الحجز الخطِر لحظة الحجز.</b> الحجز المبكر جدًا، وحجوزات المجموعات، والضيف الذي ألغى من قبل، كلها تُلغى أكثر بكثير من المتوسط.`,
+    `<b>طلب الليلة الأولى مقدمًا من الحجوزات الخطرة فقط</b> كان سيربح ${fmt.eurShort(base.net_eur)} في 8 أشهر. أما طلبه من الجميع فكان سيخسر ${fmt.eurShort(-blanket.net_eur)}.`,
+  ] : [
+    `<b>${fmt.pct(T.cancellation_rate)} of bookings are cancelled.</b> They were worth ${fmt.eurShort(T.cancelled_revenue)} over ${months} months, against ${fmt.eurShort(T.realized_revenue)} the hotels actually earned.`,
+    `<b>You can spot a risky booking when it is made.</b> Bookings made very early, group bookings and guests who cancelled before all cancel far more than average.`,
+    `<b>Asking only risky bookings to pay the first night in advance</b> would have earned ${fmt.eurShort(base.net_eur)} in 8 months. Asking every guest would have lost ${fmt.eurShort(-blanket.net_eur)}.`,
+  ]).map(s => `<li>${s}</li>`).join("");
+
+  tiles("headline", ar ? [
+    {label: "الحجوزات التي أُلغيت", value: fmt.pct(T.cancellation_rate), note: `من ${fmt.int(T.bookings)} حجز`},
+    {label: "قيمة الحجوزات الملغاة", value: fmt.eurShort(T.cancelled_revenue), note: `خلال ${months} شهرًا`},
+    {label: "عربون من الحجوزات الخطرة فقط", value: fmt.eurShort(base.net_eur), cls: "good", note: "صافي ربح، يناير–أغسطس 2017"},
+    {label: "عربون من كل الضيوف", value: fmt.eurShort(blanket.net_eur), cls: "bad", note: "صافي خسارة، نفس الفترة"},
+  ] : [
+    {label: "Bookings cancelled", value: fmt.pct(T.cancellation_rate), note: `of ${fmt.int(T.bookings)} bookings`},
+    {label: "Value of cancelled bookings", value: fmt.eurShort(T.cancelled_revenue), note: `over ${months} months`},
+    {label: "Deposit for risky bookings only", value: fmt.eurShort(base.net_eur), cls: "good", note: "net gain, Jan–Aug 2017"},
+    {label: "Deposit for every guest", value: fmt.eurShort(blanket.net_eur), cls: "bad", note: "net loss, same period"},
+  ]);
+
+  tiles("predict-tiles", ar ? [
+    {label: "يصيب النموذج في", value: `${Math.round(M.test.accuracy * 100)} من 100`, note: `تخمين "لا أحد يلغي" يصيب في ${Math.round(M.test.majority_class_accuracy * 100)} من 100`},
+    {label: "خطأ التوقع الأسبوعي", value: fmt.pct(M.weekly_forecast.weighted_abs_error), note: `توقّع ${fmt.int(M.weekly_forecast.total_predicted)} إلغاءً، والفعلي ${fmt.int(M.weekly_forecast.total_actual)}`},
+    {label: "متى يلغي الضيف عادةً", value: `قبل ${Math.round(timing["City Hotel"].median_days)} يومًا`, note: `في فندق المدينة (${Math.round(timing["Resort Hotel"].median_days)} يومًا في المنتجع)، وقت كافٍ لإعادة بيع الغرفة`},
+  ] : [
+    {label: "The model is right", value: `${Math.round(M.test.accuracy * 100)} times in 100`, note: `Guessing "nobody cancels" is right ${Math.round(M.test.majority_class_accuracy * 100)} times in 100`},
+    {label: "Weekly forecast error", value: fmt.pct(M.weekly_forecast.weighted_abs_error), note: `${fmt.int(M.weekly_forecast.total_predicted)} cancellations predicted, ${fmt.int(M.weekly_forecast.total_actual)} happened`},
+    {label: "A typical cancellation comes", value: `${Math.round(timing["City Hotel"].median_days)} days early`, note: `At the city hotel (${Math.round(timing["Resort Hotel"].median_days)} days at the resort): time to resell the room`},
+  ]);
+
+  tiles("policy-tiles", ar ? [
+    {label: "الحجوزات التي يُطلب منها عربون", value: fmt.pct(base.flagged_share), note: `${fmt.int(base.flagged)} من ${fmt.int(P.eligible_bookings_2017)} حجز بدون عربون`},
+    {label: "الإلغاءات التي يغطيها العربون", value: fmt.pct(base.catch_rate), note: `${fmt.int(base.cancellations_caught)} من ${fmt.int(P.eligible_cancellations_2017)}`},
+    {label: "عربون احتُفظ به من ضيوف ألغوا", value: fmt.eurShort(base.gain_eur)},
+    {label: "خسارة من ضيوف رفضوا العربون", value: fmt.eurShort(base.loss_eur)},
+  ] : [
+    {label: "Bookings asked for a deposit", value: fmt.pct(base.flagged_share), note: `${fmt.int(base.flagged)} of ${fmt.int(P.eligible_bookings_2017)} no-deposit bookings`},
+    {label: "Cancellations covered by a deposit", value: fmt.pct(base.catch_rate), note: `${fmt.int(base.cancellations_caught)} of ${fmt.int(P.eligible_cancellations_2017)}`},
+    {label: "Deposits kept from guests who cancelled", value: fmt.eurShort(base.gain_eur)},
+    {label: "Lost from guests who refused to pay", value: fmt.eurShort(base.loss_eur)},
+  ]);
+
+  el("trust").innerHTML = (ar ? [
+    `<b>كل رقم مُراجَع آليًا.</b> ${DBT.tests} اختبارًا تعمل في كل تشغيل، ولا يفشل أي منها. لا يضيع حجز ولا يُحسب يورو مرتين، من الملف الأصلي حتى هذه الصفحة.`,
+    `<b>الاختبار على سنة لم يرها النموذج.</b> تعلّم النموذج من 2015–2016، ثم اختُبر على 2017. وحُدد حدّ الخطر (${fmt.pct(P.chosen_threshold)}) من بيانات 2016 فقط.`,
+    `<b>لا معلومات من المستقبل.</b> بعض المعلومات تُسجَّل بعد وصول الضيف، مثل طلب موقف السيارة. الفندق لا يعرفها لحظة الحجز، لذلك لم يستخدمها النموذج.`,
+    `<b>أخطاء البيانات موثّقة.</b> استبعدنا ${fmt.int(Q.excluded)} حجزًا فقط فيها أخطاء واضحة، مثل ليلة بسعر 5,400 يورو أو حجز بلا ضيوف.`,
+  ] : [
+    `<b>Every number is checked automatically.</b> ${DBT.tests} checks run every time, and none fail. No booking is lost and no euro is counted twice, from the source file to this page.`,
+    `<b>Tested on a year the model never saw.</b> The model learned from 2015–2016 and was tested on 2017. The risk cut-off (${fmt.pct(P.chosen_threshold)}) was also set using 2016 data only.`,
+    `<b>No information from the future.</b> Some fields are filled in after the guest arrives, such as a parking request. The hotel can't know them when the booking is made, so the model doesn't use them.`,
+    `<b>Data errors are documented.</b> Only ${fmt.int(Q.excluded)} bookings with clear errors were removed, such as a €5,400 night or a booking with no guests.`,
+  ]).map(s => `<li>${s}</li>`).join("");
+
+  el("limits").innerHTML = (ar ? [
+    "البيانات لفندقين في البرتغال بين 2015 و2017. الطريقة تصلح لأي فندق أو نشاط مشابه، أما الأرقام فتُحسب من بيانات كل نشاط.",
+    `عدد الضيوف الذين سيرفضون العربون افتراض، لأن البيانات لا تُظهره. الحالة الأساسية: ${fmt.pct(A.walkaway)} يرفضون، ويُعاد بيع ${fmt.pct(A.resale)} من الغرف المفقودة. لذلك عرضنا 12 احتمالًا. قبل التطبيق الكامل، جرّب التوصية على جزء من الحجوزات أولًا.`,
+    "الإيراد هنا هو إيراد الغرف فقط (سعر الليلة × عدد الليالي)، بدون المطعم أو الخدمات الأخرى.",
+  ] : [
+    "The data covers two hotels in Portugal, 2015–2017. The method works for any hotel or similar business; the numbers come from each business's own data.",
+    `How many guests refuse a deposit is an assumption, because the data can't show it. Base case: ${fmt.pct(A.walkaway)} refuse, and ${fmt.pct(A.resale)} of lost rooms are resold. That is why 12 cases are shown. Before a full rollout, try the rule on a share of bookings first.`,
+    "Revenue here is room revenue only (nightly price × nights), without food or other services.",
+  ]).map(s => `<li>${s}</li>`).join("");
+
+  // Technical section
+  tiles("model-tiles", [
+    {label: "ROC AUC, 2017", value: M.test.roc_auc.toFixed(3), note: ar ? "1.0 ترتيب مثالي، 0.5 عشوائي" : "1.0 = perfect ranking, 0.5 = random"},
+    {label: ar ? "الدقة (Accuracy)، 2017" : "Accuracy, 2017", value: fmt.pct(M.test.accuracy, 1), note: ar ? `خط الأساس: ${fmt.pct(M.test.majority_class_accuracy, 1)}` : `baseline ${fmt.pct(M.test.majority_class_accuracy, 1)}`},
+    {label: "Brier score", value: M.test.brier.toFixed(3), note: ar ? "الأقل أفضل؛ 0.25 = قول 50% دائمًا" : "lower is better; 0.25 = always 50%"},
+    {label: ar ? "خطأ التوقع الأسبوعي (WAPE)" : "Weekly forecast WAPE", value: fmt.pct(M.weekly_forecast.weighted_abs_error, 1), note: ar ? `مجموع الفترة أقل من الفعلي بـ ${fmt.pct(Math.abs(M.weekly_forecast.total_error), 1)}` : `period total ${fmt.pct(Math.abs(M.weekly_forecast.total_error), 1)} under`},
+  ]);
+  el("t-leak").innerHTML = `<details class="numbers"><summary>${ar ? "الأعمدة المستبعدة ولماذا" : "Excluded columns and why"}</summary>` + table(
+    [{key: "col", label: ar ? "العمود" : "Column"}, {key: "why", label: ar ? "السبب" : "Why it leaks"}],
+    Object.keys(M.excluded_as_leaky).map(col => ({col, why: (LEAK_WHY[col] || [M.excluded_as_leaky[col], M.excluded_as_leaky[col]])[ar ? 1 : 0]}))) + "</details>";
+  el("t-calib").innerHTML = table(
+    [{key: "bin", label: ar ? "الخطر المتوقَّع" : "Predicted risk"}, {key: "n", label: ar ? "الحجوزات" : "Bookings", num: 1, f: fmt.int},
+     {key: "predicted", label: ar ? "المتوقَّع" : "Predicted", num: 1, f: v => fmt.pct(v, 1)}, {key: "actual", label: ar ? "الفعلي" : "Actual", num: 1, f: v => fmt.pct(v, 1)}], M.calibration_test);
+  const dqRows = [
+    {issue: ar ? "سعر أعلى من 1,000 يورو لليلة" : "Price above €1,000 a night", rows: Q.adr_outlier, action: ar ? "استُبعد (ليلة بـ 5,400 يورو؛ التالية 510)" : "Excluded (one €5,400 night; the next highest is €510)"},
+    {issue: ar ? "سعر سالب" : "Negative price", rows: Q.negative_adr, action: ar ? "استُبعد" : "Excluded"},
+    {issue: ar ? "حجز بلا ضيوف" : "Booking with no guests", rows: Q.zero_guests, action: ar ? "استُبعد" : "Excluded"},
+    {issue: ar ? "صفوف مطابقة لصفوف أخرى" : "Rows identical to another row", rows: Q.identical_rows, action: ar ? "أُبقيت: لا يوجد رقم حجز، والصفوف المتطابقة تطابق حجوزات المجموعات (غرف منفصلة)" : "Kept: no booking ID exists, and the twins match group blocks (separate rooms)"},
+    {issue: ar ? "الدولة غير معروفة" : "Country missing", rows: Q.unknown_country, action: ar ? "أُبقيت كـ UNK؛ الدولة ليست من مدخلات النموذج" : "Kept as UNK; country is not a model input"},
+    ...DBT.warnings.map(w => ({issue: ar ? "إقامة انتهت قبل موعدها (تحذير dbt)" : "Stay ended early (dbt warning)", rows: w.failures, action: ar ? "أُبقيت، وتُراقَب كتحذير" : "Kept; monitored as a warning"})),
+  ];
+  el("t-dq").innerHTML = table([{key: "issue", label: ar ? "المشكلة" : "Issue"}, {key: "rows", label: ar ? "الصفوف" : "Rows", num: 1, f: fmt.int}, {key: "action", label: ar ? "الإجراء" : "Action"}], dqRows);
+  el("method").innerHTML = (ar ? [
+    `<b>تقسيم زمني لا عشوائي.</b> التقسيم العشوائي يضع حجوزات المجموعات المتطابقة في التدريب والاختبار معًا، فترتفع الدقة من ${fmt.pct(M.test.accuracy, 1)} إلى ${fmt.pct(M.random_split.accuracy, 1)} دون أن يتحسن النموذج.`,
+    `<b>منع التسريب (Leakage).</b> مع الأعمدة المستبعدة تصل الدقة إلى ${fmt.pct(M.test_with_leaky_columns.accuracy, 1)} على 2017، و${fmt.pct(M.random_split_with_leaky_columns.accuracy, 1)} مع تقسيم عشوائي. التحليلات المنشورة التي تذكر 99% تستخدم عادةً عمود reservation_status، وهو الإجابة نفسها.`,
+    `<b>الطلبات الخاصة</b> قد تُضاف بعد الحجز. بدونها ينخفض ROC AUC من ${M.test.roc_auc.toFixed(3)} إلى ${M.test_without_special_requests.roc_auc.toFixed(3)}.`,
+    `<b>اختبار السياسة.</b> حدّ الخطر اختير على سبتمبر–ديسمبر 2016 وطُبّق دون تغيير على 2017. المكسب = (1 − نسبة الرفض) × الليلة الأولى، لكل حجز كان سيُلغى. الخسارة = نسبة الرفض × قيمة الإقامة × (1 − نسبة إعادة البيع)، لكل حجز كان سيكتمل.`,
+  ] : [
+    `<b>Time-based split, never random.</b> A random split puts identical group rows in both training and test, lifting accuracy from ${fmt.pct(M.test.accuracy, 1)} to ${fmt.pct(M.random_split.accuracy, 1)} without the model being any better.`,
+    `<b>Leakage removed.</b> With the excluded columns, accuracy reaches ${fmt.pct(M.test_with_leaky_columns.accuracy, 1)} on 2017 and ${fmt.pct(M.random_split_with_leaky_columns.accuracy, 1)} with a random split. Published notebooks that report 99% usually include reservation_status, which is the answer itself.`,
+    `<b>Special requests</b> may be added after booking. Without them, ROC AUC drops from ${M.test.roc_auc.toFixed(3)} to ${M.test_without_special_requests.roc_auc.toFixed(3)}.`,
+    `<b>Policy backtest.</b> The threshold is chosen on Sep–Dec 2016 and applied unchanged to 2017. Gain = (1 − walk-away) × first night, for each flagged booking that would have cancelled. Loss = walk-away × stay value × (1 − resale), for each flagged booking that would have stayed.`,
+  ]).map(s => `<li>${s}</li>`).join("");
+
+  // Tables under charts
+  const monthCols = [{key: "hotel", label: ar ? "الفندق" : "Hotel", f: nameOf}, {key: "arrival_month", label: ar ? "الشهر" : "Month", f: fmt.month}];
+  el("t-rate").innerHTML = table([...monthCols, {key: "bookings", label: ar ? "الحجوزات" : "Bookings", num: 1, f: fmt.int},
+    {key: "cancellations", label: ar ? "الملغاة" : "Cancelled", num: 1, f: fmt.int}, {key: "cancellation_rate", label: ar ? "النسبة" : "Share", num: 1, f: v => fmt.pct(v, 1)}], D.monthly);
+  el("t-lost").innerHTML = table([...monthCols, {key: "cancelled_revenue_eur", label: ar ? "قيمة الملغى" : "Cancelled", num: 1, f: fmt.eur},
+    {key: "realized_revenue_eur", label: ar ? "المحصَّل" : "Earned", num: 1, f: fmt.eur}], D.monthly);
+  el("t-week").innerHTML = table([{key: "hotel", label: ar ? "الفندق" : "Hotel", f: nameOf}, {key: "week", label: ar ? "الأسبوع" : "Week of", f: fmt.day},
+    {key: "bookings", label: ar ? "الوصولات" : "Arrivals", num: 1, f: fmt.int}, {key: "predicted", label: ar ? "المتوقَّع" : "Predicted", num: 1, f: v => v.toFixed(0)},
+    {key: "actual", label: ar ? "الفعلي" : "Actual", num: 1, f: fmt.int}], D.weekly);
+
+  // Sensitivity table (colours applied in renderCharts so they follow the theme)
+  const walk = [...new Set(P.sensitivity.map(s => s.walkaway))], res = [...new Set(P.sensitivity.map(s => s.resale))];
+  el("t-sens").innerHTML = `<table class="heat"><thead><tr><th>${ar ? "يرفضون العربون ↓ / يُعاد بيع الغرفة ←" : "Refuse the deposit ↓ / Room resold →"}</th>${res.map(r => `<th class="num">${fmt.pct(r)}</th>`).join("")}</tr></thead><tbody>` +
+    walk.map(w => `<tr><th>${fmt.pct(w)}</th>` + res.map(r => {
+      const s = P.sensitivity.find(x => x.walkaway === w && x.resale === r);
+      return `<td class="cell" data-v="${s.net_eur_2017}">${fmt.eurShort(s.net_eur_2017)}</td>`;
+    }).join("") + "</tr>").join("") + "</tbody></table>";
+}
+
+/* ---------- charts ---------- */
+const HOTELS = ["City Hotel", "Resort Hotel"];
+const HOTEL_VAR = {"City Hotel": "--series-1", "Resort Hotel": "--series-2"};
+const CFG = {displayModeBar: false, responsive: true};
+function baseLayout(extra = {}) {
+  const ax = {gridcolor: css("--grid"), linecolor: css("--axis"), zerolinecolor: css("--axis"),
+    tickfont: {color: css("--muted"), size: 11}, title: {font: {color: css("--ink-2"), size: 12}}, automargin: true};
+  return Object.assign({
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: {family: "Segoe UI, Tahoma, system-ui, sans-serif", color: css("--ink-2"), size: 12},
+    margin: {l: 8, r: 12, t: 8, b: 8},
+    xaxis: {...ax, showgrid: false}, yaxis: {...ax},
+    legend: {orientation: "h", x: 0, y: 1.14, font: {color: css("--ink-2"), size: 12}},
+    hoverlabel: {bgcolor: css("--surface"), bordercolor: css("--axis"), font: {color: css("--ink"), size: 12}},
+    bargap: 0.25, bargroupgap: 0.08,
+  }, extra);
+}
+const yax = extra => ({...baseLayout().yaxis, ...extra});
+const xax = extra => ({...baseLayout().xaxis, ...extra});
+const plot = (id, data, layout) => Plotly.react(id, data, layout, CFG);
+// Date ticks in the page language, one label every `everyMonths` months.
+function dateTicks(dates, everyMonths = 6) {
+  const vals = [...new Set(dates.map(d => d.slice(0, 7)))].filter(m => (parseInt(m.slice(5, 7), 10) - 1) % everyMonths === 0).map(m => m + "-01");
+  return {tickvals: vals, ticktext: vals.map(fmt.month)};
+}
+
+function renderCharts() {
+  const ar = AR(), surface = css("--surface");
+
+  const rowsBy = h => D.monthly.filter(r => r.hotel === h);
+  const allMonths = D.monthly.map(r => r.arrival_month);
+  plot("c-rate", HOTELS.map(h => {
+    const rows = rowsBy(h);
+    return {type: "scatter", mode: "lines+markers", name: nameOf(h), x: rows.map(r => r.arrival_month), y: rows.map(r => r.cancellation_rate),
+      line: {color: css(HOTEL_VAR[h]), width: 2}, marker: {size: 8, color: css(HOTEL_VAR[h]), line: {color: surface, width: 2}},
+      customdata: rows.map(r => fmt.month(r.arrival_month)), hovertemplate: "%{customdata}: %{y:.0%}<extra>" + nameOf(h) + "</extra>"};
+  }), baseLayout({hovermode: "closest", xaxis: xax(dateTicks(allMonths)), yaxis: yax({tickformat: ".0%", rangemode: "tozero"})}));
+
+  plot("c-lost", HOTELS.map(h => {
+    const rows = rowsBy(h);
+    return {type: "bar", name: nameOf(h), x: rows.map(r => r.arrival_month), y: rows.map(r => r.cancelled_revenue_eur),
+      marker: {color: css(HOTEL_VAR[h]), cornerradius: 4},
+      customdata: rows.map(r => [fmt.month(r.arrival_month), fmt.eur(r.cancelled_revenue_eur)]), hovertemplate: "%{customdata[0]}: %{customdata[1]}<extra>" + nameOf(h) + "</extra>"};
+  }), baseLayout({barmode: "group", hovermode: "closest", xaxis: xax(dateTicks(allMonths)), yaxis: yax({tickprefix: "€", tickformat: "~s"})}));
+
+  const CARDS = [
+    {dim: "lead_time_band", title: ["How early they booked", "متى حُجز قبل الوصول"], order: ["0-7 days", "8-30 days", "31-90 days", "91-180 days", "181-365 days", "365+ days"]},
+    {dim: "previous_cancellations", title: ["Cancelled a booking before?", "هل ألغى حجزًا من قبل؟"], order: ["1 or more", "None"]},
+    {dim: "market_segment", title: ["How they booked", "طريقة الحجز"], minBookings: 1000},
+    {dim: "deposit_type", title: ["Deposit", "العربون"], order: ["Non Refund", "No Deposit", "Refundable"]},
+    {dim: "special_requests", title: ["Asked for anything special?", "هل طلب شيئًا خاصًا؟"], order: ["None", "1 or more"]},
+    {dim: "customer_type", title: ["Type of guest", "نوع الضيف"]},
+  ];
+  const notes = {
+    deposit_type: ["\"Paid, non-refundable\" bookings are mostly group and tour-operator blocks cancelled in bulk.", "حجوزات \"مدفوع وغير مسترد\" معظمها حجوزات مجموعات وشركات سياحة تُلغى دفعة واحدة."],
+  };
+  el("drivers").innerHTML = CARDS.map(c => {
+    const n = drv(c.dim).filter(r => r.bookings >= (c.minBookings || 0)).length;
+    return `<div class="card"><h3>${c.title[ar ? 1 : 0]}</h3>${notes[c.dim] ? `<p class="sub">${notes[c.dim][ar ? 1 : 0]}</p>` : ""}<div class="chart" id="d-${c.dim}" style="height:${50 + 34 * n}px"></div><details class="numbers"><summary>${ar ? "اعرض الأرقام" : "Show the numbers"}</summary><div class="table-wrap" id="dt-${c.dim}"></div></details></div>`;
+  }).join("");
+  CARDS.forEach(c => {
+    let rows = drv(c.dim).filter(r => r.bookings >= (c.minBookings || 0));
+    rows = c.order ? c.order.map(v => rows.find(r => r.value === v)).filter(Boolean) : [...rows].sort((a, b) => b.cancellation_rate - a.cancellation_rate);
+    const shown = [...rows].reverse();  // Plotly draws the first row at the bottom
+    plot("d-" + c.dim, [{type: "bar", orientation: "h", y: shown.map(r => nameOf(r.value)), x: shown.map(r => r.cancellation_rate),
+      text: shown.map(r => fmt.pct(r.cancellation_rate)), textposition: "outside", textfont: {color: css("--ink-2"), size: 12}, cliponaxis: false,
+      marker: {color: css("--single"), cornerradius: 4},
+      customdata: shown.map(r => fmt.int(r.bookings)),
+      hovertemplate: (ar ? "%{x:.0%} أُلغي<br>%{customdata} حجز" : "%{x:.0%} cancelled<br>%{customdata} bookings") + "<extra></extra>"}],
+      baseLayout({margin: {l: 8, r: 40, t: 4, b: 4}, showlegend: false, bargap: 0.38,
+        xaxis: xax({tickformat: ".0%", range: ar ? [1.1, 0] : [0, 1.1], showgrid: true, gridcolor: css("--grid")}),
+        yaxis: yax({side: ar ? "right" : "left"}),
+        shapes: [{type: "line", x0: T.cancellation_rate, x1: T.cancellation_rate, yref: "paper", y0: 0, y1: 1, line: {color: css("--muted"), width: 1}}]}));
+    el("dt-" + c.dim).innerHTML = table([{key: "value", label: c.title[ar ? 1 : 0], f: nameOf}, {key: "bookings", label: ar ? "الحجوزات" : "Bookings", num: 1, f: fmt.int},
+      {key: "cancellation_rate", label: ar ? "نسبة الإلغاء" : "Cancelled", num: 1, f: v => fmt.pct(v, 1)}], rows);
+  });
+
+  [["c-week-city", "City Hotel"], ["c-week-resort", "Resort Hotel"]].forEach(([id, h]) => {
+    const rows = D.weekly.filter(r => r.hotel === h);
+    plot(id, [
+      {type: "bar", name: ar ? "الفعلي" : "Actual", x: rows.map(r => r.week), y: rows.map(r => r.actual), marker: {color: css("--neutral-bar"), cornerradius: 3},
+        customdata: rows.map(r => fmt.day(r.week)), hovertemplate: (ar ? "أسبوع %{customdata}: %{y} فعلي" : "Week of %{customdata}: %{y} actual") + "<extra></extra>"},
+      {type: "scatter", mode: "lines", name: ar ? "المتوقَّع" : "Predicted", x: rows.map(r => r.week), y: rows.map(r => r.predicted), line: {color: css(HOTEL_VAR[h]), width: 2},
+        hovertemplate: (ar ? "%{y:.0f} متوقَّع" : "%{y:.0f} predicted") + "<extra></extra>"},
+    ], baseLayout({hovermode: "x", bargap: 0.15, xaxis: xax(dateTicks(rows.map(r => r.week), 2)),
+      title: {text: nameOf(h), x: ar ? 1 : 0, xanchor: ar ? "right" : "left", y: 0.98, font: {size: 14, color: css("--ink")}},
+      legend: {orientation: "h", x: ar ? 0 : 1, xanchor: ar ? "left" : "right", y: 1.12, font: {color: css("--ink-2"), size: 12}},
+      margin: {l: 8, r: 12, t: 32, b: 8}}));
+  });
+
+  const cmp = [
+    {name: ar ? "بدون عربون<br>(الوضع الحالي)" : "No deposits<br>(today)", v: 0, c: "--neutral-bar"},
+    {name: ar ? "عربون من<br>الجميع" : "Deposit from<br>every guest", v: blanket.net_eur, c: "--div-neg"},
+    {name: ar ? "عربون من الحجوزات<br>الخطرة فقط" : "Deposit from risky<br>bookings only", v: base.net_eur, c: "--div-pos"},
+  ];
+  plot("c-compare", [{type: "bar", x: cmp.map(r => r.name), y: cmp.map(r => r.v), text: cmp.map(r => fmt.eurShort(r.v)), textposition: "outside", cliponaxis: false,
+    textfont: {color: css("--ink"), size: 13}, marker: {color: cmp.map(r => css(r.c)), cornerradius: 4}, hoverinfo: "skip"}],
+    baseLayout({showlegend: false, margin: {l: 8, r: 8, t: 24, b: 8}, xaxis: xax({autorange: ar ? "reversed" : true}),
+      yaxis: yax({tickprefix: "€", tickformat: "~s", zeroline: true, zerolinecolor: css("--axis"), range: [Math.min(blanket.net_eur, 0) * 1.4, Math.max(base.net_eur, 0) * 1.3]})}));
+
+  const maxAbs = Math.max(...P.sensitivity.map(s => Math.abs(s.net_eur_2017)), 1);
+  const mix = (a, b, t) => { const p = x => [1, 3, 5].map(i => parseInt(x.slice(i, i + 2), 16)); const X = p(a), Y = p(b); return "rgb(" + X.map((v, i) => Math.round(v + (Y[i] - v) * t)).join(",") + ")"; };
+  document.querySelectorAll("#t-sens td.cell").forEach(td => {
+    const v = parseFloat(td.dataset.v);
+    td.style.background = mix(css("--div-mid"), v >= 0 ? css("--div-pos") : css("--div-neg"), Math.min(Math.abs(v) / maxAbs, 1) * 0.55);
+  });
+
+  // Technical charts
+  const leakRows = [
+    {name: ar ? "تخمين: لا أحد<br>يلغي" : "Guess: nobody<br>cancels", v: M.test.majority_class_accuracy, c: "--neutral-bar"},
+    {name: ar ? "هذا النموذج:<br>اختبار على 2017" : "This model:<br>tested on 2017", v: M.test.accuracy, c: "--single"},
+    {name: ar ? "تقسيم<br>عشوائي" : "Random<br>split", v: M.random_split.accuracy, c: "--neutral-bar"},
+    {name: ar ? "عشوائي + أعمدة<br>مسرّبة" : "Random split +<br>leaky columns", v: M.random_split_with_leaky_columns.accuracy, c: "--neutral-bar"},
+  ];
+  plot("c-leak", [{type: "bar", x: leakRows.map(r => r.name), y: leakRows.map(r => r.v), text: leakRows.map(r => fmt.pct(r.v, 1)), textposition: "outside",
+    textfont: {color: css("--ink"), size: 12}, cliponaxis: false, marker: {color: leakRows.map(r => css(r.c)), cornerradius: 4}, hoverinfo: "skip"}],
+    baseLayout({showlegend: false, xaxis: xax({autorange: ar ? "reversed" : true}), yaxis: yax({tickformat: ".0%", range: [0, 1.12]}), margin: {l: 8, r: 8, t: 16, b: 8}}));
+
+  const cal = M.calibration_test;
+  plot("c-calib", [
+    {type: "scatter", mode: "lines", x: [0, 1], y: [0, 1], name: ar ? "معايرة مثالية" : "Perfect calibration", line: {color: css("--muted"), width: 1}, hoverinfo: "skip"},
+    {type: "scatter", mode: "lines+markers", name: ar ? "النموذج، 2017" : "Model, 2017", x: cal.map(r => r.predicted), y: cal.map(r => r.actual),
+      line: {color: css("--single"), width: 2}, marker: {size: cal.map(r => Math.max(8, Math.min(18, Math.sqrt(r.n) / 4))), color: css("--single"), line: {color: surface, width: 2}},
+      hovertemplate: (ar ? "متوقَّع %{x:.0%} ← فعلي %{y:.0%}" : "predicted %{x:.0%} → actual %{y:.0%}") + "<extra></extra>"},
+  ], baseLayout({xaxis: xax({tickformat: ".0%", range: [0, 1], showgrid: true, gridcolor: css("--grid"), title: {text: ar ? "الخطر المتوقَّع" : "Predicted risk", font: {color: css("--ink-2"), size: 12}}}),
+    yaxis: yax({tickformat: ".0%", range: [0, 1], title: {text: ar ? "أُلغي فعلًا" : "Actually cancelled", font: {color: css("--ink-2"), size: 12}}})}));
+
+  const curve = P.threshold_curve_base_case.filter(r => r.threshold > 0);
+  const chosen = curve.find(r => r.threshold === P.chosen_threshold) || base;
+  plot("c-curve", [
+    {type: "scatter", mode: "lines", x: curve.map(r => r.threshold), y: curve.map(r => r.net_eur), line: {color: css("--single"), width: 2},
+      customdata: curve.map(r => fmt.eurShort(r.net_eur)), hovertemplate: "%{x:.0%}: %{customdata}<extra></extra>"},
+    {type: "scatter", mode: "markers+text", x: [chosen.threshold], y: [chosen.net_eur], text: [`${fmt.pct(chosen.threshold)} → ${fmt.eurShort(chosen.net_eur)}`],
+      textposition: "top right", textfont: {color: css("--ink"), size: 12}, marker: {size: 10, color: css("--single"), line: {color: surface, width: 2}}, hoverinfo: "skip"},
+  ], baseLayout({showlegend: false, xaxis: xax({tickformat: ".0%", title: {text: ar ? "حدّ الخطر لطلب العربون" : "Risk threshold for asking a deposit", font: {color: css("--ink-2"), size: 12}}}),
+    yaxis: yax({tickprefix: "€", tickformat: "~s", zeroline: true, zerolinecolor: css("--axis")}), margin: {l: 8, r: 12, t: 24, b: 8}}));
+}
+
+/* ---------- controls ---------- */
+const root = document.documentElement;
+try { const t = localStorage.getItem("theme"); if (t) root.dataset.theme = t; } catch (e) {}
+function render() { renderText(); renderCharts(); }
+el("lang-toggle").addEventListener("click", () => {
+  LANG = AR() ? "en" : "ar";
+  try { localStorage.setItem("lang", LANG); } catch (e) {}
+  const u = new URL(location.href); u.searchParams.set("lang", LANG); history.replaceState(null, "", u);
+  render();
+});
+el("theme-toggle").addEventListener("click", () => {
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("theme", root.dataset.theme); } catch (e) {}
+  renderCharts();
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderCharts);
+// Charts inside the closed technical section have no width until it opens.
+el("tech").addEventListener("toggle", () => { if (el("tech").open) renderCharts(); });
+render();
+</script>
+</body>
+</html>

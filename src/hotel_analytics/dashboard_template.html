@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hotel Cancellation Analytics</title>
+<meta name="description" content="Where two hotels lose money to cancellations, which bookings are likely to cancel, and a deposit policy tested on a year the model never saw. English and Arabic.">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6;   /* City hotel */
+  --series-2: #eb6834;   /* Resort */
+  --single: #4a3aa7;     /* one-series charts */
+  --neutral-bar: #c3c2b7;
+  --div-pos: #2a78d6;
+  --div-neg: #e34948;
+  --div-mid: #f0efec;
+  --good: #006300;
+  --bad: #b42323;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --series-2: #d95926; --single: #9085e9; --neutral-bar: #4a4a46;
+    --div-pos: #3987e5; --div-neg: #e66767; --div-mid: #383835; --good: #0ca30c; --bad: #e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --series-1: #3987e5; --series-2: #d95926; --single: #9085e9; --neutral-bar: #4a4a46;
+  --div-pos: #3987e5; --div-neg: #e66767; --div-mid: #383835; --good: #0ca30c; --bad: #e66767;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page);
+  color: var(--ink);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+}
+html[lang="ar"] body { font-family: "Segoe UI", Tahoma, system-ui, sans-serif; }
+main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+.topbar { display: flex; justify-content: flex-end; gap: 8px; }
+.btn {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink-2);
+  border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer;
+}
+header { margin-top: 12px; }
+header h1 { font-size: 32px; line-height: 1.25; margin: 0 0 10px; }
+header p { color: var(--ink-2); margin: 0; max-width: 760px; font-size: 17px; }
+.meta { font-size: 13px; color: var(--muted); margin-top: 10px; }
+section { margin-top: 48px; }
+section > h2 { font-size: 22px; margin: 0 0 6px; }
+section > p.lede { color: var(--ink-2); margin: 0 0 16px; max-width: 780px; }
+.answer { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 22px; }
+.answer ol { margin: 0; padding-inline-start: 22px; }
+.answer li { margin: 8px 0; font-size: 17px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.tile, .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+.tile .label { font-size: 14px; color: var(--ink-2); }
+.tile .value { font-size: 32px; font-weight: 600; margin-top: 4px; line-height: 1.2; }
+.tile .value.good { color: var(--good); }
+.tile .value.bad { color: var(--bad); }
+.tile .note { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); gap: 12px; }
+.card h3 { font-size: 16px; margin: 0 0 2px; }
+.card .sub { font-size: 14px; color: var(--ink-2); margin: 0 0 6px; }
+.chart { width: 100%; height: 300px; direction: ltr; }
+details.numbers { margin-top: 6px; font-size: 14px; }
+summary { cursor: pointer; color: var(--ink-2); }
+table { border-collapse: collapse; width: 100%; margin-top: 8px; font-variant-numeric: tabular-nums; font-size: 14px; }
+th, td { text-align: start; padding: 6px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { color: var(--ink-2); font-weight: 600; }
+td.num, th.num { text-align: end; }
+.table-wrap { overflow-x: auto; }
+.reco { border-inline-start: 4px solid var(--single); background: var(--surface); border-radius: 10px; padding: 14px 18px; font-size: 17px; margin-bottom: 12px; }
+.reco b { color: var(--ink); }
+.heat td.cell { text-align: center; font-weight: 600; color: var(--ink); }
+ul.plain { margin: 0; padding-inline-start: 22px; }
+ul.plain li { margin: 8px 0; }
+details.tech { margin-top: 48px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 6px 18px; }
+details.tech > summary { font-size: 18px; font-weight: 600; color: var(--ink); padding: 12px 0; }
+details.tech h3.tech-h { font-size: 17px; margin: 28px 0 8px; }
+details.tech .card { background: var(--page); }
+footer { margin-top: 48px; font-size: 13px; color: var(--muted); }
+a { color: inherit; }
+@media (max-width: 560px) { header h1 { font-size: 26px; } .tile .value { font-size: 28px; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <button class="btn" id="lang-toggle" type="button"></button>
+    <button class="btn" id="theme-toggle" type="button"></button>
+  </div>
+
+  <header>
+    <h1 id="h-title"></h1>
+    <p id="h-sub"></p>
+    <div class="meta" id="h-meta"></div>
+  </header>
+
+  <section>
+    <h2 id="s0-h"></h2>
+    <div class="answer"><ol id="answer"></ol></div>
+    <div class="tiles" id="headline" style="margin-top:12px"></div>
+  </section>
+
+  <section>
+    <h2 id="s1-h"></h2>
+    <p class="lede" id="s1-p"></p>
+    <div class="grid-2">
+      <div class="card"><h3 id="c-rate-h"></h3><p class="sub" id="c-rate-s"></p><div class="chart" id="c-rate"></div><details class="numbers"><summary class="sum-numbers"></summary><div class="table-wrap" id="t-rate"></div></details></div>
+      <div class="card"><h3 id="c-lost-h"></h3><p class="sub" id="c-lost-s"></p><div class="chart" id="c-lost"></div><details class="numbers"><summary class="sum-numbers"></summary><div class="table-wrap" id="t-lost"></div></details></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="s2-h"></h2>
+    <p class="lede" id="s2-p"></p>
+    <div class="grid-3" id="drivers"></div>
+  </section>
+
+  <section>
+    <h2 id="s3-h"></h2>
+    <p class="lede" id="s3-p"></p>
+    <div class="tiles" id="predict-tiles"></div>
+    <div class="card" style="margin-top:12px"><h3 id="c-week-h"></h3><p class="sub" id="c-week-s"></p>
+      <div class="grid-2"><div class="chart" id="c-week-city"></div><div class="chart" id="c-week-resort"></div></div>
+      <details class="numbers"><summary class="sum-numbers"></summary><div class="table-wrap" id="t-week"></div></details></div>
+  </section>
+
+  <section>
+    <h2 id="s4-h"></h2>
+    <div class="reco" id="reco"></div>
+    <div class="grid-2">
+      <div class="card"><h3 id="c-compare-h"></h3><p class="sub" id="c-compare-s"></p><div class="chart" id="c-compare"></div></div>
+      <div class="card"><h3 id="t-sens-h"></h3><p class="sub" id="t-sens-s"></p><div class="table-wrap" id="t-sens"></div><p class="sub" id="t-sens-n" style="margin-top:10px"></p></div>
+    </div>
+    <div class="tiles" id="policy-tiles" style="margin-top:12px"></div>
+  </section>
+
+  <section>
+    <h2 id="s5-h"></h2>
+    <div class="card"><ul class="plain" id="trust"></ul></div>
+  </section>
+
+  <section>
+    <h2 id="s6-h"></h2>
+    <div class="card"><ul class="plain" id="limits"></ul></div>
+  </section>
+
+  <details class="tech" id="tech">
+    <summary id="tech-h"></summary>
+    <p class="sub" id="tech-p"></p>
+    <div class="tiles" id="model-tiles"></div>
+    <div class="grid-2" style="margin-top:12px">
+      <div class="card"><h3 id="c-leak-h"></h3><p class="sub" id="c-leak-s"></p><div class="chart" id="c-leak"></div><div class="table-wrap" id="t-leak"></div></div>
+      <div class="card"><h3 id="c-calib-h"></h3><p class="sub" id="c-calib-s"></p><div class="chart" id="c-calib"></div><details class="numbers"><summary class="sum-numbers"></summary><div class="table-wrap" id="t-calib"></div></details></div>
+    </div>
+    <div class="grid-2" style="margin-top:12px">
+      <div class="card"><h3 id="c-curve-h"></h3><p class="sub" id="c-curve-s"></p><div class="chart" id="c-curve"></div></div>
+      <div class="card"><h3 id="t-dq-h"></h3><p class="sub" id="t-dq-s"></p><div class="table-wrap" id="t-dq"></div></div>
+    </div>
+    <h3 class="tech-h" id="method-h"></h3>
+    <ul class="plain" id="method"></ul>
+    <p class="sub" id="tech-links" style="margin:16px 0 12px"></p>
+  </details>
+
+  <footer id="footer"></footer>
+</main>
+
+<script>
+const D = /*__DATA__*/null;
+const T = D.totals, M = D.model, P = D.policy, Q = D.quality, DBT = D.dbt;
+const REPO = "https://github.com/Yahia20/hotel-revenue-analytics";
+const el = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s).replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c]));
+
+/* ---------- language ---------- */
+const params = new URLSearchParams(location.search);
+let LANG = params.get("lang") || (() => { try { return localStorage.getItem("lang"); } catch (e) { return null; } })()
+  || ((navigator.language || "").startsWith("ar") ? "ar" : "en");
+if (!["en", "ar"].includes(LANG)) LANG = "en";
+const AR = () => LANG === "ar";
+const loc = () => AR() ? "ar-u-nu-latn" : "en-US";
+
+const fmt = {
+  int: v => Math.round(v).toLocaleString(loc()),
+  pct: (v, d = 0) => (v * 100).toFixed(d) + "%",
+  eur: v => AR() ? `${Math.round(v).toLocaleString(loc())} يورو` : "€" + Math.round(v).toLocaleString("en-US"),
+  eurShort: v => {
+    const sign = v < 0 ? "−" : "", a = Math.abs(v);
+    if (a < 500) return AR() ? "0 يورو" : "€0";
+    const [num, unit] = a >= 1e6 ? [(a / 1e6).toFixed(1), ["M", "مليون"]] : [Math.round(a / 1000).toLocaleString(loc()), ["k", "ألف"]];
+    // In Arabic the signed number is isolated as left-to-right so the minus stays in front of it.
+    return AR() ? `⁦${sign}${num}⁩ ${unit[1]} يورو` : `${sign}€${num}${unit[0]}`;
+  },
+  month: s => new Date(s.slice(0, 10) + "T00:00:00").toLocaleString(loc(), {month: "short", year: "numeric"}),
+  day: s => new Date(s.slice(0, 10) + "T00:00:00").toLocaleString(loc(), {day: "numeric", month: "short"}),
+};
+
+const VALUE_NAMES = {
+  "City Hotel": ["City hotel", "فندق المدينة"],
+  "Resort Hotel": ["Resort", "المنتجع"],
+  "0-7 days": ["0–7 days before", "قبلها بـ 0–7 أيام"],
+  "8-30 days": ["8–30 days before", "قبلها بـ 8–30 يومًا"],
+  "31-90 days": ["1–3 months before", "قبلها بـ 1–3 أشهر"],
+  "91-180 days": ["3–6 months before", "قبلها بـ 3–6 أشهر"],
+  "181-365 days": ["6–12 months before", "قبلها بـ 6–12 شهرًا"],
+  "365+ days": ["Over a year before", "قبلها بأكثر من سنة"],
+  "No Deposit": ["No deposit", "بدون عربون"],
+  "Non Refund": ["Paid, non-refundable", "مدفوع وغير مسترد"],
+  "Refundable": ["Paid, refundable", "مدفوع ومسترد"],
+  "Groups": ["Groups", "مجموعات"],
+  "Online TA": ["Booking websites", "مواقع الحجز"],
+  "Offline TA/TO": ["Travel agents", "وكلاء السفر"],
+  "Corporate": ["Companies", "شركات"],
+  "Direct": ["Direct with the hotel", "مباشر مع الفندق"],
+  "None": ["No", "لا"],
+  "1 or more": ["Yes", "نعم"],
+  "Transient": ["Individual guest", "ضيف فردي"],
+  "Transient-Party": ["Individual, linked to a group", "فردي مرتبط بمجموعة"],
+  "Contract": ["Under a contract", "بموجب عقد"],
+  "Group": ["Group", "مجموعة"],
+};
+const nameOf = v => (VALUE_NAMES[v] || [v, v])[AR() ? 1 : 0];
+
+const LEAK_WHY = {
+  parking_spaces: ["Recorded when the guest arrives. No cancelled booking has one.", "يُسجَّل عند وصول الضيف، فلا يوجد حجز ملغى فيه موقف سيارة."],
+  assigned_room_type: ["The room is assigned at check-in.", "الغرفة تُحدَّد عند تسجيل الوصول."],
+  booking_changes: ["Counts changes made up to the arrival day.", "يعدّ التعديلات حتى يوم الوصول."],
+  country_code: ["Corrected at check-in. Cancelled bookings keep the default.", "تُصحَّح عند الوصول، والحجوزات الملغاة تبقى على القيمة الافتراضية."],
+  reservation_status: ["This is the outcome itself.", "هذا هو الناتج نفسه."],
+  reservation_status_date: ["This is the date of the outcome.", "هذا هو تاريخ الناتج."],
+};
+
+/* ---------- small builders ---------- */
+function table(cols, rows) {
+  const head = cols.map(c => `<th class="${c.num ? "num" : ""}">${esc(c.label)}</th>`).join("");
+  const body = rows.map(r => "<tr>" + cols.map(c => `<td class="${c.num ? "num" : ""}">${esc(c.f ? c.f(r[c.key], r) : r[c.key])}</td>`).join("") + "</tr>").join("");
+  return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+function tiles(id, items) {
+  el(id).innerHTML = items.map(t => `<div class="tile"><div class="label">${t.label}</div><div class="value ${t.cls || ""}">${t.value}</div>${t.note ? `<div class="note">${t.note}</div>` : ""}</div>`).join("");
+}
+const setText = (map) => Object.entries(map).forEach(([id, v]) => { el(id).innerHTML = v; });
+
+const drv = dim => D.drivers.filter(r => r.dimension === dim);
+const timing = Object.fromEntries(D.cancel_timing.map(r => [r.hotel, r]));
+const base = P.base_case, blanket = P.blanket_deposit_base_case, A = P.assumptions_base;
+const sensNets = P.sensitivity.map(s => s.net_eur_2017);
+const months = D.monthly.length / 2;
+
+/* ---------- text ---------- */
+function renderText() {
+  const ar = AR();
+  document.documentElement.lang = LANG;
+  // Direction goes on <main>, not <html>: Plotly measures text in a hidden element on <body>, and an
+  // RTL <body> makes it clip axis labels.
+  document.querySelector("main").dir = ar ? "rtl" : "ltr";
+  document.title = ar ? "تحليل إلغاء حجوزات الفنادق" : "Hotel Cancellation Analytics";
+  el("lang-toggle").textContent = ar ? "English" : "العربية";
+  el("theme-toggle").textContent = ar ? "فاتح / داكن" : "Light / dark";
+  document.querySelectorAll(".sum-numbers").forEach(s => s.textContent = ar ? "اعرض الأرقام" : "Show the numbers");
+
+  setText({
+    "h-title": ar ? "إلغاء حجوزات الفنادق: أين تذهب الأموال؟" : "Hotel cancellations: where does the money go?",
+    "h-sub": ar
+      ? `حلّلنا ${fmt.int(T.bookings)} حجزًا في فندقين لنجيب عن ثلاثة أسئلة: كم تكلّف الإلغاءات، ومن الذي يلغي، وماذا يمكن للفندق أن يفعل.`
+      : `We analysed ${fmt.int(T.bookings)} bookings at two hotels to answer three questions: what cancellations cost, who cancels, and what the hotel can do about it.`,
+    "h-meta": ar
+      ? `البيانات: فندقان في البرتغال، الوصول من ${fmt.month(T.first_arrival)} إلى ${fmt.month(T.last_arrival)}، والمبالغ باليورو. بيانات عامة منشورة (Antonio وAlmeida وNunes، 2019).`
+      : `Data: two hotels in Portugal, arrivals ${fmt.month(T.first_arrival)} to ${fmt.month(T.last_arrival)}, amounts in euros. Public dataset (Antonio, Almeida & Nunes, 2019).`,
+
+    "s0-h": ar ? "الخلاصة" : "The short answer",
+    "s1-h": ar ? "1. ما حجم المشكلة؟" : "1. How big is the problem?",
+    "s1-p": ar
+      ? `يُلغى ${fmt.pct(T.cancellation_rate)} من الحجوزات. الغرفة المحجوزة لا تُعرض للبيع حتى يلغي الضيف، فقد تبقى فارغة.`
+      : `${fmt.pct(T.cancellation_rate)} of bookings are cancelled. A booked room is held off sale until the guest cancels, so it can end up empty.`,
+    "c-rate-h": ar ? "نسبة الإلغاء كل شهر" : "Share of bookings cancelled, each month",
+    "c-rate-s": ar ? "حسب شهر الوصول، لكل فندق" : "By month of arrival, for each hotel",
+    "c-lost-h": ar ? "قيمة الحجوزات الملغاة كل شهر" : "Value of cancelled bookings, each month",
+    "c-lost-s": ar ? "سعر الليلة × عدد الليالي، قبل أي إعادة بيع للغرفة" : "Nightly price × nights, before any resale of the room",
+
+    "s2-h": ar ? "2. من الذي يلغي؟" : "2. Who cancels?",
+    "s2-p": ar
+      ? `كل عمود يوضّح نسبة الحجوزات التي أُلغيت. الخط الرمادي هو المتوسط (${fmt.pct(T.cancellation_rate)}). الفندق يعرف كل هذه المعلومات لحظة الحجز.`
+      : `Each bar shows the share of bookings that were cancelled. The grey line is the average (${fmt.pct(T.cancellation_rate)}). The hotel knows all of this at the moment of booking.`,
+
+    "s3-h": ar ? "3. هل يمكن توقّع الإلغاء؟" : "3. Can we predict a cancellation?",
+    "s3-p": ar
+      ? "نعم. بنينا نموذجًا، وهو برنامج يتعلّم من الحجوزات السابقة، يعطي كل حجز جديد درجة خطر من 0% إلى 100%. ثم اختبرناه على حجوزات 2017 التي لم يرها أثناء التعلّم."
+      : "Yes. We built a model, a program that learns from past bookings, that gives every new booking a risk score from 0% to 100%. We then tested it on 2017 bookings it had not seen while learning.",
+    "c-week-h": ar ? "عدد الإلغاءات كل أسبوع في 2017: المتوقَّع مقابل الفعلي" : "Cancellations each week in 2017: predicted vs actual",
+    "c-week-s": ar ? "الأعمدة: ما حدث فعلًا. الخط: ما توقّعه النموذج مسبقًا. يستخدم الفندق هذا الرقم ليقرر كم غرفة إضافية يمكنه بيعها." : "Bars: what happened. Line: what the model predicted in advance. A hotel uses this number to decide how many extra rooms it can safely sell.",
+
+    "s4-h": ar ? "4. ماذا يجب أن يفعل الفندق؟" : "4. What should the hotel do?",
+    "reco": ar
+      ? `<b>التوصية:</b> اطلب الليلة الأولى مقدمًا، غير مستردّة، فقط من الحجوزات التي درجة خطرها ${fmt.pct(P.chosen_threshold)} أو أكثر. أبقِ بقية الحجوزات بدون عربون.`
+      : `<b>Recommendation:</b> ask for the first night in advance, non-refundable, only when a booking's risk score is ${fmt.pct(P.chosen_threshold)} or higher. Keep every other booking deposit-free.`,
+    "c-compare-h": ar ? "صافي النتيجة خلال 8 أشهر من 2017" : "Net result over 8 months of 2017",
+    "c-compare-s": ar ? "مقارنةً بعدم طلب أي عربون" : "Compared with asking no one for a deposit",
+    "t-sens-h": ar ? "ماذا لو تصرّف الضيوف بشكل مختلف؟" : "What if guests react differently?",
+    "t-sens-s": ar
+      ? "لا نعرف بالضبط كم ضيفًا سيرفض العربون، لذلك جرّبنا 12 احتمالًا. كل خانة هي صافي ربح التوصية."
+      : "Nobody knows exactly how many guests will refuse a deposit, so we tried 12 possibilities. Each cell is the net gain from the recommendation.",
+    "t-sens-n": ar
+      ? `كل الخانات موجبة: التوصية تربح في الاحتمالات الـ 12 كلها، من ${fmt.eurShort(Math.min(...sensNets))} إلى ${fmt.eurShort(Math.max(...sensNets))}.`
+      : `Every cell is positive: the recommendation makes money in all 12 cases, from ${fmt.eurShort(Math.min(...sensNets))} to ${fmt.eurShort(Math.max(...sensNets))}.`,
+
+    "s5-h": ar ? "5. لماذا يمكن الوثوق بهذه الأرقام؟" : "5. Why you can trust these numbers",
+    "s6-h": ar ? "من المهم أن تعرف" : "Good to know",
+
+    "tech-h": ar ? "التفاصيل التقنية (لفرق البيانات)" : "Technical details (for data teams)",
+    "tech-p": ar
+      ? "النموذج: LightGBM. التقييم: كل شهر من يناير إلى أغسطس 2017 قيّمه نموذج أُعيد تدريبه على كل الوصولات السابقة لذلك الشهر (walk-forward)."
+      : "Model: LightGBM. Evaluation: each month of Jan–Aug 2017 is scored by a model retrained on every arrival before that month (monthly walk-forward).",
+    "c-leak-h": ar ? "لماذا الدقة 77.6% وليست 99%؟" : "Why the accuracy is 77.6%, not 99%",
+    "c-leak-s": ar ? "دقة النموذج نفسه تحت طرق اختبار مختلفة" : "Accuracy of the same model under different test setups",
+    "c-calib-h": ar ? "هل الاحتمالات صادقة؟ (Calibration)" : "Are the probabilities honest? (calibration)",
+    "c-calib-s": ar ? "حجوزات 2017 مجمّعة حسب الخطر المتوقَّع، مقابل نسبة الإلغاء الفعلية" : "2017 bookings grouped by predicted risk, against the share that actually cancelled",
+    "c-curve-h": ar ? "صافي الربح حسب حدّ الخطر (Threshold)" : "Net result by risk threshold",
+    "c-curve-s": ar ? "الافتراضات الأساسية. النقطة هي الحد المختار من بيانات 2016." : "Base-case assumptions. The marker is the threshold chosen on 2016 data.",
+    "t-dq-h": ar ? "مشكلات البيانات وكيف عولجت" : "Data issues and how they were handled",
+    "t-dq-s": ar
+      ? `مستودع البيانات مبني بـ dbt على DuckDB: ${DBT.models} جداول و${DBT.tests} اختبارًا في كل تشغيل، ${DBT.failed} منها فاشل.`
+      : `Warehouse built with dbt on DuckDB: ${DBT.models} models and ${DBT.tests} data tests on every run, ${DBT.failed} failing.`,
+    "method-h": ar ? "الطريقة والقيود" : "Method and limits",
+    "tech-links": ar
+      ? `<a href="dbt-docs.html">توثيق dbt: مسار البيانات وكل اختبار</a> · <a href="${REPO}">الكود على GitHub</a>`
+      : `<a href="dbt-docs.html">dbt docs: data lineage and every test</a> · <a href="${REPO}">Code on GitHub</a>`,
+    "footer": ar
+      ? `كل رقم في هذه الصفحة ناتج تلقائيًا من البيانات الأصلية، ولا شيء مكتوب يدويًا. <a href="${REPO}">الكود وطريقة إعادة التشغيل على GitHub</a>.`
+      : `Every number on this page is generated from the source data. Nothing is typed by hand. <a href="${REPO}">Code and how to rerun it on GitHub</a>.`,
+  });
+
+  el("answer").innerHTML = (ar ? [
+    `<b>يُلغى ${fmt.pct(T.cancellation_rate)} من الحجوزات.</b> قيمتها ${fmt.eurShort(T.cancelled_revenue)} خلال ${months} شهرًا، مقابل ${fmt.eurShort(T.realized_revenue)} حصّلها الفندقان فعلًا.`,
+    `<b>يمكن معرفة الحجز الخطِر لحظة الحجز.</b> الحجز المبكر جدًا، وحجوزات المجموعات، والضيف الذي ألغى من قبل، كلها تُلغى أكثر بكثير من المتوسط.`,
+    `<b>طلب الليلة الأولى مقدمًا من الحجوزات الخطرة فقط</b> كان سيربح ${fmt.eurShort(base.net_eur)} في 8 أشهر. أما طلبه من الجميع فكان سيخسر ${fmt.eurShort(-blanket.net_eur)}.`,
+  ] : [
+    `<b>${fmt.pct(T.cancellation_rate)} of bookings are cancelled.</b> They were worth ${fmt.eurShort(T.cancelled_revenue)} over ${months} months, against ${fmt.eurShort(T.realized_revenue)} the hotels actually earned.`,
+    `<b>You can spot a risky booking when it is made.</b> Bookings made very early, group bookings and guests who cancelled before all cancel far more than average.`,
+    `<b>Asking only risky bookings to pay the first night in advance</b> would have earned ${fmt.eurShort(base.net_eur)} in 8 months. Asking every guest would have lost ${fmt.eurShort(-blanket.net_eur)}.`,
+  ]).map(s => `<li>${s}</li>`).join("");
+
+  tiles("headline", ar ? [
+    {label: "الحجوزات التي أُلغيت", value: fmt.pct(T.cancellation_rate), note: `من ${fmt.int(T.bookings)} حجز`},
+    {label: "قيمة الحجوزات الملغاة", value: fmt.eurShort(T.cancelled_revenue), note: `خلال ${months} شهرًا`},
+    {label: "عربون من الحجوزات الخطرة فقط", value: fmt.eurShort(base.net_eur), cls: "good", note: "صافي ربح، يناير–أغسطس 2017"},
+    {label: "عربون من كل الضيوف", value: fmt.eurShort(blanket.net_eur), cls: "bad", note: "صافي خسارة، نفس الفترة"},
+  ] : [
+    {label: "Bookings cancelled", value: fmt.pct(T.cancellation_rate), note: `of ${fmt.int(T.bookings)} bookings`},
+    {label: "Value of cancelled bookings", value: fmt.eurShort(T.cancelled_revenue), note: `over ${months} months`},
+    {label: "Deposit for risky bookings only", value: fmt.eurShort(base.net_eur), cls: "good", note: "net gain, Jan–Aug 2017"},
+    {label: "Deposit for every guest", value: fmt.eurShort(blanket.net_eur), cls: "bad", note: "net loss, same period"},
+  ]);
+
+  tiles("predict-tiles", ar ? [
+    {label: "يصيب النموذج في", value: `${Math.round(M.test.accuracy * 100)} من 100`, note: `تخمين "لا أحد يلغي" يصيب في ${Math.round(M.test.majority_class_accuracy * 100)} من 100`},
+    {label: "خطأ التوقع الأسبوعي", value: fmt.pct(M.weekly_forecast.weighted_abs_error), note: `توقّع ${fmt.int(M.weekly_forecast.total_predicted)} إلغاءً، والفعلي ${fmt.int(M.weekly_forecast.total_actual)}`},
+    {label: "متى يلغي الضيف عادةً", value: `قبل ${Math.round(timing["City Hotel"].median_days)} يومًا`, note: `في فندق المدينة (${Math.round(timing["Resort Hotel"].median_days)} يومًا في المنتجع)، وقت كافٍ لإعادة بيع الغرفة`},
+  ] : [
+    {label: "The model is right", value: `${Math.round(M.test.accuracy * 100)} times in 100`, note: `Guessing "nobody cancels" is right ${Math.round(M.test.majority_class_accuracy * 100)} times in 100`},
+    {label: "Weekly forecast error", value: fmt.pct(M.weekly_forecast.weighted_abs_error), note: `${fmt.int(M.weekly_forecast.total_predicted)} cancellations predicted, ${fmt.int(M.weekly_forecast.total_actual)} happened`},
+    {label: "A typical cancellation comes", value: `${Math.round(timing["City Hotel"].median_days)} days early`, note: `At the city hotel (${Math.round(timing["Resort Hotel"].median_days)} days at the resort): time to resell the room`},
+  ]);
+
+  tiles("policy-tiles", ar ? [
+    {label: "الحجوزات التي يُطلب منها عربون", value: fmt.pct(base.flagged_share), note: `${fmt.int(base.flagged)} من ${fmt.int(P.eligible_bookings_2017)} حجز بدون عربون`},
+    {label: "الإلغاءات التي يغطيها العربون", value: fmt.pct(base.catch_rate), note: `${fmt.int(base.cancellations_caught)} من ${fmt.int(P.eligible_cancellations_2017)}`},
+    {label: "عربون احتُفظ به من ضيوف ألغوا", value: fmt.eurShort(base.gain_eur)},
+    {label: "خسارة من ضيوف رفضوا العربون", value: fmt.eurShort(base.loss_eur)},
+  ] : [
+    {label: "Bookings asked for a deposit", value: fmt.pct(base.flagged_share), note: `${fmt.int(base.flagged)} of ${fmt.int(P.eligible_bookings_2017)} no-deposit bookings`},
+    {label: "Cancellations covered by a deposit", value: fmt.pct(base.catch_rate), note: `${fmt.int(base.cancellations_caught)} of ${fmt.int(P.eligible_cancellations_2017)}`},
+    {label: "Deposits kept from guests who cancelled", value: fmt.eurShort(base.gain_eur)},
+    {label: "Lost from guests who refused to pay", value: fmt.eurShort(base.loss_eur)},
+  ]);
+
+  el("trust").innerHTML = (ar ? [
+    `<b>كل رقم مُراجَع آليًا.</b> ${DBT.tests} اختبارًا تعمل في كل تشغيل، ولا يفشل أي منها. لا يضيع حجز ولا يُحسب يورو مرتين، من الملف الأصلي حتى هذه الصفحة.`,
+    `<b>الاختبار على سنة لم يرها النموذج.</b> تعلّم النموذج من 2015–2016، ثم اختُبر على 2017. وحُدد حدّ الخطر (${fmt.pct(P.chosen_threshold)}) من بيانات 2016 فقط.`,
+    `<b>لا معلومات من المستقبل.</b> بعض المعلومات تُسجَّل بعد وصول الضيف، مثل طلب موقف السيارة. الفندق لا يعرفها لحظة الحجز، لذلك لم يستخدمها النموذج.`,
+    `<b>أخطاء البيانات موثّقة.</b> استبعدنا ${fmt.int(Q.excluded)} حجزًا فقط فيها أخطاء واضحة، مثل ليلة بسعر 5,400 يورو أو حجز بلا ضيوف.`,
+  ] : [
+    `<b>Every number is checked automatically.</b> ${DBT.tests} checks run every time, and none fail. No booking is lost and no euro is counted twice, from the source file to this page.`,
+    `<b>Tested on a year the model never saw.</b> The model learned from 2015–2016 and was tested on 2017. The risk cut-off (${fmt.pct(P.chosen_threshold)}) was also set using 2016 data only.`,
+    `<b>No information from the future.</b> Some fields are filled in after the guest arrives, such as a parking request. The hotel can't know them when the booking is made, so the model doesn't use them.`,
+    `<b>Data errors are documented.</b> Only ${fmt.int(Q.excluded)} bookings with clear errors were removed, such as a €5,400 night or a booking with no guests.`,
+  ]).map(s => `<li>${s}</li>`).join("");
+
+  el("limits").innerHTML = (ar ? [
+    "البيانات لفندقين في البرتغال بين 2015 و2017. الطريقة تصلح لأي فندق أو نشاط مشابه، أما الأرقام فتُحسب من بيانات كل نشاط.",
+    `عدد الضيوف الذين سيرفضون العربون افتراض، لأن البيانات لا تُظهره. الحالة الأساسية: ${fmt.pct(A.walkaway)} يرفضون، ويُعاد بيع ${fmt.pct(A.resale)} من الغرف المفقودة. لذلك عرضنا 12 احتمالًا. قبل التطبيق الكامل، جرّب التوصية على جزء من الحجوزات أولًا.`,
+    "الإيراد هنا هو إيراد الغرف فقط (سعر الليلة × عدد الليالي)، بدون المطعم أو الخدمات الأخرى.",
+  ] : [
+    "The data covers two hotels in Portugal, 2015–2017. The method works for any hotel or similar business; the numbers come from each business's own data.",
+    `How many guests refuse a deposit is an assumption, because the data can't show it. Base case: ${fmt.pct(A.walkaway)} refuse, and ${fmt.pct(A.resale)} of lost rooms are resold. That is why 12 cases are shown. Before a full rollout, try the rule on a share of bookings first.`,
+    "Revenue here is room revenue only (nightly price × nights), without food or other services.",
+  ]).map(s => `<li>${s}</li>`).join("");
+
+  // Technical section
+  tiles("model-tiles", [
+    {label: "ROC AUC, 2017", value: M.test.roc_auc.toFixed(3), note: ar ? "1.0 ترتيب مثالي، 0.5 عشوائي" : "1.0 = perfect ranking, 0.5 = random"},
+    {label: ar ? "الدقة (Accuracy)، 2017" : "Accuracy, 2017", value: fmt.pct(M.test.accuracy, 1), note: ar ? `خط الأساس: ${fmt.pct(M.test.majority_class_accuracy, 1)}` : `baseline ${fmt.pct(M.test.majority_class_accuracy, 1)}`},
+    {label: "Brier score", value: M.test.brier.toFixed(3), note: ar ? "الأقل أفضل؛ 0.25 = قول 50% دائمًا" : "lower is better; 0.25 = always 50%"},
+    {label: ar ? "خطأ التوقع الأسبوعي (WAPE)" : "Weekly forecast WAPE", value: fmt.pct(M.weekly_forecast.weighted_abs_error, 1), note: ar ? `مجموع الفترة أقل من الفعلي بـ ${fmt.pct(Math.abs(M.weekly_forecast.total_error), 1)}` : `period total ${fmt.pct(Math.abs(M.weekly_forecast.total_error), 1)} under`},
+  ]);
+  el("t-leak").innerHTML = `<details class="numbers"><summary>${ar ? "الأعمدة المستبعدة ولماذا" : "Excluded columns and why"}</summary>` + table(
+    [{key: "col", label: ar ? "العمود" : "Column"}, {key: "why", label: ar ? "السبب" : "Why it leaks"}],
+    Object.keys(M.excluded_as_leaky).map(col => ({col, why: (LEAK_WHY[col] || [M.excluded_as_leaky[col], M.excluded_as_leaky[col]])[ar ? 1 : 0]}))) + "</details>";
+  el("t-calib").innerHTML = table(
+    [{key: "bin", label: ar ? "الخطر المتوقَّع" : "Predicted risk"}, {key: "n", label: ar ? "الحجوزات" : "Bookings", num: 1, f: fmt.int},
+     {key: "predicted", label: ar ? "المتوقَّع" : "Predicted", num: 1, f: v => fmt.pct(v, 1)}, {key: "actual", label: ar ? "الفعلي" : "Actual", num: 1, f: v => fmt.pct(v, 1)}], M.calibration_test);
+  const dqRows = [
+    {issue: ar ? "سعر أعلى من 1,000 يورو لليلة" : "Price above €1,000 a night", rows: Q.adr_outlier, action: ar ? "استُبعد (ليلة بـ 5,400 يورو؛ التالية 510)" : "Excluded (one €5,400 night; the next highest is €510)"},
+    {issue: ar ? "سعر سالب" : "Negative price", rows: Q.negative_adr, action: ar ? "استُبعد" : "Excluded"},
+    {issue: ar ? "حجز بلا ضيوف" : "Booking with no guests", rows: Q.zero_guests, action: ar ? "استُبعد" : "Excluded"},
+    {issue: ar ? "صفوف مطابقة لصفوف أخرى" : "Rows identical to another row", rows: Q.identical_rows, action: ar ? "أُبقيت: لا يوجد رقم حجز، والصفوف المتطابقة تطابق حجوزات المجموعات (غرف منفصلة)" : "Kept: no booking ID exists, and the twins match group blocks (separate rooms)"},
+    {issue: ar ? "الدولة غير معروفة" : "Country missing", rows: Q.unknown_country, action: ar ? "أُبقيت كـ UNK؛ الدولة ليست من مدخلات النموذج" : "Kept as UNK; country is not a model input"},
+    ...DBT.warnings.map(w => ({issue: ar ? "إقامة انتهت قبل موعدها (تحذير dbt)" : "Stay ended early (dbt warning)", rows: w.failures, action: ar ? "أُبقيت، وتُراقَب كتحذير" : "Kept; monitored as a warning"})),
+  ];
+  el("t-dq").innerHTML = table([{key: "issue", label: ar ? "المشكلة" : "Issue"}, {key: "rows", label: ar ? "الصفوف" : "Rows", num: 1, f: fmt.int}, {key: "action", label: ar ? "الإجراء" : "Action"}], dqRows);
+  el("method").innerHTML = (ar ? [
+    `<b>تقسيم زمني لا عشوائي.</b> التقسيم العشوائي يضع حجوزات المجموعات المتطابقة في التدريب والاختبار معًا، فترتفع الدقة من ${fmt.pct(M.test.accuracy, 1)} إلى ${fmt.pct(M.random_split.accuracy, 1)} دون أن يتحسن النموذج.`,
+    `<b>منع التسريب (Leakage).</b> مع الأعمدة المستبعدة تصل الدقة إلى ${fmt.pct(M.test_with_leaky_columns.accuracy, 1)} على 2017، و${fmt.pct(M.random_split_with_leaky_columns.accuracy, 1)} مع تقسيم عشوائي. التحليلات المنشورة التي تذكر 99% تستخدم عادةً عمود reservation_status، وهو الإجابة نفسها.`,
+    `<b>الطلبات الخاصة</b> قد تُضاف بعد الحجز. بدونها ينخفض ROC AUC من ${M.test.roc_auc.toFixed(3)} إلى ${M.test_without_special_requests.roc_auc.toFixed(3)}.`,
+    `<b>اختبار السياسة.</b> حدّ الخطر اختير على سبتمبر–ديسمبر 2016 وطُبّق دون تغيير على 2017. المكسب = (1 − نسبة الرفض) × الليلة الأولى، لكل حجز كان سيُلغى. الخسارة = نسبة الرفض × قيمة الإقامة × (1 − نسبة إعادة البيع)، لكل حجز كان سيكتمل.`,
+  ] : [
+    `<b>Time-based split, never random.</b> A random split puts identical group rows in both training and test, lifting accuracy from ${fmt.pct(M.test.accuracy, 1)} to ${fmt.pct(M.random_split.accuracy, 1)} without the model being any better.`,
+    `<b>Leakage removed.</b> With the excluded columns, accuracy reaches ${fmt.pct(M.test_with_leaky_columns.accuracy, 1)} on 2017 and ${fmt.pct(M.random_split_with_leaky_columns.accuracy, 1)} with a random split. Published notebooks that report 99% usually include reservation_status, which is the answer itself.`,
+    `<b>Special requests</b> may be added after booking. Without them, ROC AUC drops from ${M.test.roc_auc.toFixed(3)} to ${M.test_without_special_requests.roc_auc.toFixed(3)}.`,
+    `<b>Policy backtest.</b> The threshold is chosen on Sep–Dec 2016 and applied unchanged to 2017. Gain = (1 − walk-away) × first night, for each flagged booking that would have cancelled. Loss = walk-away × stay value × (1 − resale), for each flagged booking that would have stayed.`,
+  ]).map(s => `<li>${s}</li>`).join("");
+
+  // Tables under charts
+  const monthCols = [{key: "hotel", label: ar ? "الفندق" : "Hotel", f: nameOf}, {key: "arrival_month", label: ar ? "الشهر" : "Month", f: fmt.month}];
+  el("t-rate").innerHTML = table([...monthCols, {key: "bookings", label: ar ? "الحجوزات" : "Bookings", num: 1, f: fmt.int},
+    {key: "cancellations", label: ar ? "الملغاة" : "Cancelled", num: 1, f: fmt.int}, {key: "cancellation_rate", label: ar ? "النسبة" : "Share", num: 1, f: v => fmt.pct(v, 1)}], D.monthly);
+  el("t-lost").innerHTML = table([...monthCols, {key: "cancelled_revenue_eur", label: ar ? "قيمة الملغى" : "Cancelled", num: 1, f: fmt.eur},
+    {key: "realized_revenue_eur", label: ar ? "المحصَّل" : "Earned", num: 1, f: fmt.eur}], D.monthly);
+  el("t-week").innerHTML = table([{key: "hotel", label: ar ? "الفندق" : "Hotel", f: nameOf}, {key: "week", label: ar ? "الأسبوع" : "Week of", f: fmt.day},
+    {key: "bookings", label: ar ? "الوصولات" : "Arrivals", num: 1, f: fmt.int}, {key: "predicted", label: ar ? "المتوقَّع" : "Predicted", num: 1, f: v => v.toFixed(0)},
+    {key: "actual", label: ar ? "الفعلي" : "Actual", num: 1, f: fmt.int}], D.weekly);
+
+  // Sensitivity table (colours applied in renderCharts so they follow the theme)
+  const walk = [...new Set(P.sensitivity.map(s => s.walkaway))], res = [...new Set(P.sensitivity.map(s => s.resale))];
+  el("t-sens").innerHTML = `<table class="heat"><thead><tr><th>${ar ? "يرفضون العربون ↓ / يُعاد بيع الغرفة ←" : "Refuse the deposit ↓ / Room resold →"}</th>${res.map(r => `<th class="num">${fmt.pct(r)}</th>`).join("")}</tr></thead><tbody>` +
+    walk.map(w => `<tr><th>${fmt.pct(w)}</th>` + res.map(r => {
+      const s = P.sensitivity.find(x => x.walkaway === w && x.resale === r);
+      return `<td class="cell" data-v="${s.net_eur_2017}">${fmt.eurShort(s.net_eur_2017)}</td>`;
+    }).join("") + "</tr>").join("") + "</tbody></table>";
+}
+
+/* ---------- charts ---------- */
+const HOTELS = ["City Hotel", "Resort Hotel"];
+const HOTEL_VAR = {"City Hotel": "--series-1", "Resort Hotel": "--series-2"};
+const CFG = {displayModeBar: false, responsive: true};
+function baseLayout(extra = {}) {
+  const ax = {gridcolor: css("--grid"), linecolor: css("--axis"), zerolinecolor: css("--axis"),
+    tickfont: {color: css("--muted"), size: 11}, title: {font: {color: css("--ink-2"), size: 12}}, automargin: true};
+  return Object.assign({
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: {family: "Segoe UI, Tahoma, system-ui, sans-serif", color: css("--ink-2"), size: 12},
+    margin: {l: 8, r: 12, t: 8, b: 8},
+    xaxis: {...ax, showgrid: false}, yaxis: {...ax},
+    legend: {orientation: "h", x: 0, y: 1.14, font: {color: css("--ink-2"), size: 12}},
+    hoverlabel: {bgcolor: css("--surface"), bordercolor: css("--axis"), font: {color: css("--ink"), size: 12}},
+    bargap: 0.25, bargroupgap: 0.08,
+  }, extra);
+}
+const yax = extra => ({...baseLayout().yaxis, ...extra});
+const xax = extra => ({...baseLayout().xaxis, ...extra});
+const plot = (id, data, layout) => Plotly.react(id, data, layout, CFG);
+// Date ticks in the page language, one label every `everyMonths` months.
+function dateTicks(dates, everyMonths = 6) {
+  const vals = [...new Set(dates.map(d => d.slice(0, 7)))].filter(m => (parseInt(m.slice(5, 7), 10) - 1) % everyMonths === 0).map(m => m + "-01");
+  return {tickvals: vals, ticktext: vals.map(fmt.month)};
+}
+
+function renderCharts() {
+  const ar = AR(), surface = css("--surface");
+
+  const rowsBy = h => D.monthly.filter(r => r.hotel === h);
+  const allMonths = D.monthly.map(r => r.arrival_month);
+  plot("c-rate", HOTELS.map(h => {
+    const rows = rowsBy(h);
+    return {type: "scatter", mode: "lines+markers", name: nameOf(h), x: rows.map(r => r.arrival_month), y: rows.map(r => r.cancellation_rate),
+      line: {color: css(HOTEL_VAR[h]), width: 2}, marker: {size: 8, color: css(HOTEL_VAR[h]), line: {color: surface, width: 2}},
+      customdata: rows.map(r => fmt.month(r.arrival_month)), hovertemplate: "%{customdata}: %{y:.0%}<extra>" + nameOf(h) + "</extra>"};
+  }), baseLayout({hovermode: "closest", xaxis: xax(dateTicks(allMonths)), yaxis: yax({tickformat: ".0%", rangemode: "tozero"})}));
+
+  plot("c-lost", HOTELS.map(h => {
+    const rows = rowsBy(h);
+    return {type: "bar", name: nameOf(h), x: rows.map(r => r.arrival_month), y: rows.map(r => r.cancelled_revenue_eur),
+      marker: {color: css(HOTEL_VAR[h]), cornerradius: 4},
+      customdata: rows.map(r => [fmt.month(r.arrival_month), fmt.eur(r.cancelled_revenue_eur)]), hovertemplate: "%{customdata[0]}: %{customdata[1]}<extra>" + nameOf(h) + "</extra>"};
+  }), baseLayout({barmode: "group", hovermode: "closest", xaxis: xax(dateTicks(allMonths)), yaxis: yax({tickprefix: "€", tickformat: "~s"})}));
+
+  const CARDS = [
+    {dim: "lead_time_band", title: ["How early they booked", "متى حُجز قبل الوصول"], order: ["0-7 days", "8-30 days", "31-90 days", "91-180 days", "181-365 days", "365+ days"]},
+    {dim: "previous_cancellations", title: ["Cancelled a booking before?", "هل ألغى حجزًا من قبل؟"], order: ["1 or more", "None"]},
+    {dim: "market_segment", title: ["How they booked", "طريقة الحجز"], minBookings: 1000},
+    {dim: "deposit_type", title: ["Deposit", "العربون"], order: ["Non Refund", "No Deposit", "Refundable"]},
+    {dim: "special_requests", title: ["Asked for anything special?", "هل طلب شيئًا خاصًا؟"], order: ["None", "1 or more"]},
+    {dim: "customer_type", title: ["Type of guest", "نوع الضيف"]},
+  ];
+  const notes = {
+    deposit_type: ["\"Paid, non-refundable\" bookings are mostly group and tour-operator blocks cancelled in bulk.", "حجوزات \"مدفوع وغير مسترد\" معظمها حجوزات مجموعات وشركات سياحة تُلغى دفعة واحدة."],
+  };
+  el("drivers").innerHTML = CARDS.map(c => {
+    const n = drv(c.dim).filter(r => r.bookings >= (c.minBookings || 0)).length;
+    return `<div class="card"><h3>${c.title[ar ? 1 : 0]}</h3>${notes[c.dim] ? `<p class="sub">${notes[c.dim][ar ? 1 : 0]}</p>` : ""}<div class="chart" id="d-${c.dim}" style="height:${50 + 34 * n}px"></div><details class="numbers"><summary>${ar ? "اعرض الأرقام" : "Show the numbers"}</summary><div class="table-wrap" id="dt-${c.dim}"></div></details></div>`;
+  }).join("");
+  CARDS.forEach(c => {
+    let rows = drv(c.dim).filter(r => r.bookings >= (c.minBookings || 0));
+    rows = c.order ? c.order.map(v => rows.find(r => r.value === v)).filter(Boolean) : [...rows].sort((a, b) => b.cancellation_rate - a.cancellation_rate);
+    const shown = [...rows].reverse();  // Plotly draws the first row at the bottom
+    plot("d-" + c.dim, [{type: "bar", orientation: "h", y: shown.map(r => nameOf(r.value)), x: shown.map(r => r.cancellation_rate),
+      text: shown.map(r => fmt.pct(r.cancellation_rate)), textposition: "outside", textfont: {color: css("--ink-2"), size: 12}, cliponaxis: false,
+      marker: {color: css("--single"), cornerradius: 4},
+      customdata: shown.map(r => fmt.int(r.bookings)),
+      hovertemplate: (ar ? "%{x:.0%} أُلغي<br>%{customdata} حجز" : "%{x:.0%} cancelled<br>%{customdata} bookings") + "<extra></extra>"}],
+      baseLayout({margin: {l: 8, r: 40, t: 4, b: 4}, showlegend: false, bargap: 0.38,
+        xaxis: xax({tickformat: ".0%", range: ar ? [1.1, 0] : [0, 1.1], showgrid: true, gridcolor: css("--grid")}),
+        yaxis: yax({side: ar ? "right" : "left"}),
+        shapes: [{type: "line", x0: T.cancellation_rate, x1: T.cancellation_rate, yref: "paper", y0: 0, y1: 1, line: {color: css("--muted"), width: 1}}]}));
+    el("dt-" + c.dim).innerHTML = table([{key: "value", label: c.title[ar ? 1 : 0], f: nameOf}, {key: "bookings", label: ar ? "الحجوزات" : "Bookings", num: 1, f: fmt.int},
+      {key: "cancellation_rate", label: ar ? "نسبة الإلغاء" : "Cancelled", num: 1, f: v => fmt.pct(v, 1)}], rows);
+  });
+
+  [["c-week-city", "City Hotel"], ["c-week-resort", "Resort Hotel"]].forEach(([id, h]) => {
+    const rows = D.weekly.filter(r => r.hotel === h);
+    plot(id, [
+      {type: "bar", name: ar ? "الفعلي" : "Actual", x: rows.map(r => r.week), y: rows.map(r => r.actual), marker: {color: css("--neutral-bar"), cornerradius: 3},
+        customdata: rows.map(r => fmt.day(r.week)), hovertemplate: (ar ? "أسبوع %{customdata}: %{y} فعلي" : "Week of %{customdata}: %{y} actual") + "<extra></extra>"},
+      {type: "scatter", mode: "lines", name: ar ? "المتوقَّع" : "Predicted", x: rows.map(r => r.week), y: rows.map(r => r.predicted), line: {color: css(HOTEL_VAR[h]), width: 2},
+        hovertemplate: (ar ? "%{y:.0f} متوقَّع" : "%{y:.0f} predicted") + "<extra></extra>"},
+    ], baseLayout({hovermode: "x", bargap: 0.15, xaxis: xax(dateTicks(rows.map(r => r.week), 2)),
+      title: {text: nameOf(h), x: ar ? 1 : 0, xanchor: ar ? "right" : "left", y: 0.98, font: {size: 14, color: css("--ink")}},
+      legend: {orientation: "h", x: ar ? 0 : 1, xanchor: ar ? "left" : "right", y: 1.12, font: {color: css("--ink-2"), size: 12}},
+      margin: {l: 8, r: 12, t: 32, b: 8}}));
+  });
+
+  const cmp = [
+    {name: ar ? "بدون عربون<br>(الوضع الحالي)" : "No deposits<br>(today)", v: 0, c: "--neutral-bar"},
+    {name: ar ? "عربون من<br>الجميع" : "Deposit from<br>every guest", v: blanket.net_eur, c: "--div-neg"},
+    {name: ar ? "عربون من الحجوزات<br>الخطرة فقط" : "Deposit from risky<br>bookings only", v: base.net_eur, c: "--div-pos"},
+  ];
+  plot("c-compare", [{type: "bar", x: cmp.map(r => r.name), y: cmp.map(r => r.v), text: cmp.map(r => fmt.eurShort(r.v)), textposition: "outside", cliponaxis: false,
+    textfont: {color: css("--ink"), size: 13}, marker: {color: cmp.map(r => css(r.c)), cornerradius: 4}, hoverinfo: "skip"}],
+    baseLayout({showlegend: false, margin: {l: 8, r: 8, t: 24, b: 8}, xaxis: xax({autorange: ar ? "reversed" : true}),
+      yaxis: yax({tickprefix: "€", tickformat: "~s", zeroline: true, zerolinecolor: css("--axis"), range: [Math.min(blanket.net_eur, 0) * 1.4, Math.max(base.net_eur, 0) * 1.3]})}));
+
+  const maxAbs = Math.max(...P.sensitivity.map(s => Math.abs(s.net_eur_2017)), 1);
+  const mix = (a, b, t) => { const p = x => [1, 3, 5].map(i => parseInt(x.slice(i, i + 2), 16)); const X = p(a), Y = p(b); return "rgb(" + X.map((v, i) => Math.round(v + (Y[i] - v) * t)).join(",") + ")"; };
+  document.querySelectorAll("#t-sens td.cell").forEach(td => {
+    const v = parseFloat(td.dataset.v);
+    td.style.background = mix(css("--div-mid"), v >= 0 ? css("--div-pos") : css("--div-neg"), Math.min(Math.abs(v) / maxAbs, 1) * 0.55);
+  });
+
+  // Technical charts
+  const leakRows = [
+    {name: ar ? "تخمين: لا أحد<br>يلغي" : "Guess: nobody<br>cancels", v: M.test.majority_class_accuracy, c: "--neutral-bar"},
+    {name: ar ? "هذا النموذج:<br>اختبار على 2017" : "This model:<br>tested on 2017", v: M.test.accuracy, c: "--single"},
+    {name: ar ? "تقسيم<br>عشوائي" : "Random<br>split", v: M.random_split.accuracy, c: "--neutral-bar"},
+    {name: ar ? "عشوائي + أعمدة<br>مسرّبة" : "Random split +<br>leaky columns", v: M.random_split_with_leaky_columns.accuracy, c: "--neutral-bar"},
+  ];
+  plot("c-leak", [{type: "bar", x: leakRows.map(r => r.name), y: leakRows.map(r => r.v), text: leakRows.map(r => fmt.pct(r.v, 1)), textposition: "outside",
+    textfont: {color: css("--ink"), size: 12}, cliponaxis: false, marker: {color: leakRows.map(r => css(r.c)), cornerradius: 4}, hoverinfo: "skip"}],
+    baseLayout({showlegend: false, xaxis: xax({autorange: ar ? "reversed" : true}), yaxis: yax({tickformat: ".0%", range: [0, 1.12]}), margin: {l: 8, r: 8, t: 16, b: 8}}));
+
+  const cal = M.calibration_test;
+  plot("c-calib", [
+    {type: "scatter", mode: "lines", x: [0, 1], y: [0, 1], name: ar ? "معايرة مثالية" : "Perfect calibration", line: {color: css("--muted"), width: 1}, hoverinfo: "skip"},
+    {type: "scatter", mode: "lines+markers", name: ar ? "النموذج، 2017" : "Model, 2017", x: cal.map(r => r.predicted), y: cal.map(r => r.actual),
+      line: {color: css("--single"), width: 2}, marker: {size: cal.map(r => Math.max(8, Math.min(18, Math.sqrt(r.n) / 4))), color: css("--single"), line: {color: surface, width: 2}},
+      hovertemplate: (ar ? "متوقَّع %{x:.0%} ← فعلي %{y:.0%}" : "predicted %{x:.0%} → actual %{y:.0%}") + "<extra></extra>"},
+  ], baseLayout({xaxis: xax({tickformat: ".0%", range: [0, 1], showgrid: true, gridcolor: css("--grid"), title: {text: ar ? "الخطر المتوقَّع" : "Predicted risk", font: {color: css("--ink-2"), size: 12}}}),
+    yaxis: yax({tickformat: ".0%", range: [0, 1], title: {text: ar ? "أُلغي فعلًا" : "Actually cancelled", font: {color: css("--ink-2"), size: 12}}})}));
+
+  const curve = P.threshold_curve_base_case.filter(r => r.threshold > 0);
+  const chosen = curve.find(r => r.threshold === P.chosen_threshold) || base;
+  plot("c-curve", [
+    {type: "scatter", mode: "lines", x: curve.map(r => r.threshold), y: curve.map(r => r.net_eur), line: {color: css("--single"), width: 2},
+      customdata: curve.map(r => fmt.eurShort(r.net_eur)), hovertemplate: "%{x:.0%}: %{customdata}<extra></extra>"},
+    {type: "scatter", mode: "markers+text", x: [chosen.threshold], y: [chosen.net_eur], text: [`${fmt.pct(chosen.threshold)} → ${fmt.eurShort(chosen.net_eur)}`],
+      textposition: "top right", textfont: {color: css("--ink"), size: 12}, marker: {size: 10, color: css("--single"), line: {color: surface, width: 2}}, hoverinfo: "skip"},
+  ], baseLayout({showlegend: false, xaxis: xax({tickformat: ".0%", title: {text: ar ? "حدّ الخطر لطلب العربون" : "Risk threshold for asking a deposit", font: {color: css("--ink-2"), size: 12}}}),
+    yaxis: yax({tickprefix: "€", tickformat: "~s", zeroline: true, zerolinecolor: css("--axis")}), margin: {l: 8, r: 12, t: 24, b: 8}}));
+}
+
+/* ---------- controls ---------- */
+const root = document.documentElement;
+try { const t = localStorage.getItem("theme"); if (t) root.dataset.theme = t; } catch (e) {}
+function render() { renderText(); renderCharts(); }
+el("lang-toggle").addEventListener("click", () => {
+  LANG = AR() ? "en" : "ar";
+  try { localStorage.setItem("lang", LANG); } catch (e) {}
+  const u = new URL(location.href); u.searchParams.set("lang", LANG); history.replaceState(null, "", u);
+  render();
+});
+el("theme-toggle").addEventListener("click", () => {
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("theme", root.dataset.theme); } catch (e) {}
+  renderCharts();
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderCharts);
+// Charts inside the closed technical section have no width until it opens.
+el("tech").addEventListener("toggle", () => { if (el("tech").open) renderCharts(); });
+render();
+</script>
+</body>
+</html>

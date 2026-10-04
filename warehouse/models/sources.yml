@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Hotel Booking Demand (Antonio, Almeida & Nunes, Data in Brief 22, 2019). Two Portuguese hotels,
+      one resort (Algarve) and one city hotel (Lisbon), arrivals 2015-07-01 to 2017-08-31.
+      One row per booking. Prices are in EUR. There is no booking ID in the source.
+    tables:
+      - name: hotel_bookings
+        meta:
+          external_location: "read_csv('../data/raw/hotel_bookings.csv', header = true, nullstr = ['NULL', 'NA'], sample_size = -1)"

@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: stg_bookings
+    description: Source bookings, typed, with derived dates and data-quality flags. Same row count as the source.
+    columns:
+      - name: booking_id
+        description: Surrogate key (source file order).
+        data_tests: [unique, not_null]
+      - name: hotel
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["City Hotel", "Resort Hotel"]
+      - name: arrival_date
+        data_tests: [not_null]
+      - name: deposit_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["No Deposit", "Non Refund", "Refundable"]
+      - name: reservation_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["Check-Out", "Canceled", "No-Show"]
+      - name: meal_plan
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["BB", "HB", "FB", "SC"]
+      - name: dq_identical_to_another_row
+        description: >
+          True when every source column matches another row. Kept: with no booking ID, identical rows are
+          most likely separate rooms in one group or tour-operator block, not double loads.

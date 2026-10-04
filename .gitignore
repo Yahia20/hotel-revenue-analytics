@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/raw/
+data/*.duckdb
+data/*.duckdb.wal
+warehouse/target/
+warehouse/logs/
+warehouse/dbt_packages/
+logs/
+reports/scored_bookings.parquet
+warehouse/.user.yml
