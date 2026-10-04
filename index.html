@@ -194,6 +194,7 @@ const esc = s => String(s).replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", "
 /* ---------- language ---------- */
 const params = new URLSearchParams(location.search);
 let LANG = params.get("lang") || (() => { try { return localStorage.getItem("lang"); } catch (e) { return null; } })()
+  || (/\/ar(\/|$)/.test(document.referrer) ? "ar" : null)  // arrived from an Arabic page
   || ((navigator.language || "").startsWith("ar") ? "ar" : "en");
 if (!["en", "ar"].includes(LANG)) LANG = "en";
 const AR = () => LANG === "ar";
