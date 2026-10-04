@@ -195,7 +195,7 @@ const esc = s => String(s).replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", "
 const params = new URLSearchParams(location.search);
 let LANG = params.get("lang") || (() => { try { return localStorage.getItem("lang"); } catch (e) { return null; } })()
   || (/\/ar(\/|$)/.test(document.referrer) ? "ar" : null)  // arrived from an Arabic page
-  || ((navigator.language || "").startsWith("ar") ? "ar" : "en");
+  || "en";  // English unless the reader chose Arabic
 if (!["en", "ar"].includes(LANG)) LANG = "en";
 const AR = () => LANG === "ar";
 const loc = () => AR() ? "ar-u-nu-latn" : "en-US";
@@ -407,11 +407,11 @@ function renderText() {
   ]).map(s => `<li>${s}</li>`).join("");
 
   el("limits").innerHTML = (ar ? [
-    "البيانات لفندقين في البرتغال بين 2015 و2017. الطريقة تصلح لأي فندق أو نشاط مشابه، أما الأرقام فتُحسب من بيانات كل نشاط.",
+    "البيانات لفندقين في البرتغال بين 2015 و2017، باليورو. الطريقة نفسها تُطبَّق على فنادق السعودية بالريال، والأرقام تُحسب من بيانات كل فندق.",
     `عدد الضيوف الذين سيرفضون العربون افتراض، لأن البيانات لا تُظهره. الحالة الأساسية: ${fmt.pct(A.walkaway)} يرفضون، ويُعاد بيع ${fmt.pct(A.resale)} من الغرف المفقودة. لذلك عرضتُ 12 احتمالًا. قبل التطبيق الكامل، جرّب التوصية على جزء من الحجوزات أولًا.`,
     "الإيراد هنا هو إيراد الغرف فقط (سعر الليلة × عدد الليالي)، بدون المطعم أو الخدمات الأخرى.",
   ] : [
-    "The data covers two hotels in Portugal, 2015–2017. The method works for any hotel or similar business; the numbers come from each business's own data.",
+    "The data covers two hotels in Portugal, 2015–2017, in euros. The same method works for hotels in Saudi Arabia with prices in riyals; the numbers come from each hotel's own data.",
     `How many guests refuse a deposit is an assumption, because the data can't show it. Base case: ${fmt.pct(A.walkaway)} refuse, and ${fmt.pct(A.resale)} of lost rooms are resold. That is why 12 cases are shown. Before a full rollout, try the rule on a share of bookings first.`,
     "Revenue here is room revenue only (nightly price × nights), without food or other services.",
   ]).map(s => `<li>${s}</li>`).join("");

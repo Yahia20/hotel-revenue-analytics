@@ -146,4 +146,5 @@ Open `site/index.html` in a browser.
 - **Revenue** is room revenue (ADR × nights) in EUR, before any resale.
 - **Special requests** may be added after booking. Without them, ROC AUC drops from 0.850 to 0.827. Read
   the policy result with that margin in mind.
-- The method transfers to other hotels. The numbers do not.
+- The same method works for hotels in Saudi Arabia with prices in riyals; the numbers come from each
+  hotel's own data.
