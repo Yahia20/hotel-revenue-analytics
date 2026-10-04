@@ -282,8 +282,8 @@ function renderText() {
   setText({
     "h-title": ar ? "إلغاء حجوزات الفنادق: أين تذهب الأموال؟" : "Hotel cancellations: where does the money go?",
     "h-sub": ar
-      ? `حلّلنا ${fmt.int(T.bookings)} حجزًا في فندقين لنجيب عن ثلاثة أسئلة: كم تكلّف الإلغاءات، ومن الذي يلغي، وماذا يمكن للفندق أن يفعل.`
-      : `We analysed ${fmt.int(T.bookings)} bookings at two hotels to answer three questions: what cancellations cost, who cancels, and what the hotel can do about it.`,
+      ? `حلّلتُ ${fmt.int(T.bookings)} حجزًا في فندقين لأجيب عن ثلاثة أسئلة: كم تكلّف الإلغاءات، ومن الذي يلغي، وماذا يمكن للفندق أن يفعل.`
+      : `I analysed ${fmt.int(T.bookings)} bookings at two hotels to answer three questions: what cancellations cost, who cancels, and what the hotel can do about it.`,
     "h-meta": ar
       ? `البيانات: فندقان في البرتغال، الوصول من ${fmt.month(T.first_arrival)} إلى ${fmt.month(T.last_arrival)}، والمبالغ باليورو. بيانات عامة منشورة (Antonio وAlmeida وNunes، 2019).`
       : `Data: two hotels in Portugal, arrivals ${fmt.month(T.first_arrival)} to ${fmt.month(T.last_arrival)}, amounts in euros. Public dataset (Antonio, Almeida & Nunes, 2019).`,
@@ -303,10 +303,10 @@ function renderText() {
       ? `كل عمود يوضّح نسبة الحجوزات التي أُلغيت. الخط الرمادي هو المتوسط (${fmt.pct(T.cancellation_rate)}). الفندق يعرف كل هذه المعلومات لحظة الحجز.`
       : `Each bar shows the share of bookings that were cancelled. The grey line is the average (${fmt.pct(T.cancellation_rate)}). The hotel knows all of this at the moment of booking.`,
 
-    "s3-h": ar ? "3. هل يمكن توقّع الإلغاء؟" : "3. Can we predict a cancellation?",
+    "s3-h": ar ? "3. هل يمكن توقّع الإلغاء؟" : "3. Can a cancellation be predicted?",
     "s3-p": ar
-      ? "نعم. بنينا نموذجًا، وهو برنامج يتعلّم من الحجوزات السابقة، يعطي كل حجز جديد درجة خطر من 0% إلى 100%. ثم اختبرناه على حجوزات 2017 التي لم يرها أثناء التعلّم."
-      : "Yes. We built a model, a program that learns from past bookings, that gives every new booking a risk score from 0% to 100%. We then tested it on 2017 bookings it had not seen while learning.",
+      ? "نعم. بنيتُ نموذجًا، وهو برنامج يتعلّم من الحجوزات السابقة، يعطي كل حجز جديد درجة خطر من 0% إلى 100%. ثم اختبرتُه على حجوزات 2017 التي لم يرها أثناء التعلّم."
+      : "Yes. I built a model, a program that learns from past bookings, that gives every new booking a risk score from 0% to 100%. I then tested it on 2017 bookings it had not seen while learning.",
     "c-week-h": ar ? "عدد الإلغاءات كل أسبوع في 2017: المتوقَّع مقابل الفعلي" : "Cancellations each week in 2017: predicted vs actual",
     "c-week-s": ar ? "الأعمدة: ما حدث فعلًا. الخط: ما توقّعه النموذج مسبقًا. يستخدم الفندق هذا الرقم ليقرر كم غرفة إضافية يمكنه بيعها." : "Bars: what happened. Line: what the model predicted in advance. A hotel uses this number to decide how many extra rooms it can safely sell.",
 
@@ -318,8 +318,8 @@ function renderText() {
     "c-compare-s": ar ? "مقارنةً بعدم طلب أي عربون" : "Compared with asking no one for a deposit",
     "t-sens-h": ar ? "ماذا لو تصرّف الضيوف بشكل مختلف؟" : "What if guests react differently?",
     "t-sens-s": ar
-      ? "لا نعرف بالضبط كم ضيفًا سيرفض العربون، لذلك جرّبنا 12 احتمالًا. كل خانة هي صافي ربح التوصية."
-      : "Nobody knows exactly how many guests will refuse a deposit, so we tried 12 possibilities. Each cell is the net gain from the recommendation.",
+      ? "لا أحد يعرف بالضبط كم ضيفًا سيرفض العربون، لذلك جرّبتُ 12 احتمالًا. كل خانة هي صافي ربح التوصية."
+      : "Nobody knows exactly how many guests will refuse a deposit, so I tried 12 possibilities. Each cell is the net gain from the recommendation.",
     "t-sens-n": ar
       ? `كل الخانات موجبة: التوصية تربح في الاحتمالات الـ 12 كلها، من ${fmt.eurShort(Math.min(...sensNets))} إلى ${fmt.eurShort(Math.max(...sensNets))}.`
       : `Every cell is positive: the recommendation makes money in all 12 cases, from ${fmt.eurShort(Math.min(...sensNets))} to ${fmt.eurShort(Math.max(...sensNets))}.`,
@@ -398,7 +398,7 @@ function renderText() {
     `<b>كل رقم مُراجَع آليًا.</b> ${DBT.tests} اختبارًا تعمل في كل تشغيل، ولا يفشل أي منها. لا يضيع حجز ولا يُحسب يورو مرتين، من الملف الأصلي حتى هذه الصفحة.`,
     `<b>الاختبار على سنة لم يرها النموذج.</b> تعلّم النموذج من 2015–2016، ثم اختُبر على 2017. وحُدد حدّ الخطر (${fmt.pct(P.chosen_threshold)}) من بيانات 2016 فقط.`,
     `<b>لا معلومات من المستقبل.</b> بعض المعلومات تُسجَّل بعد وصول الضيف، مثل طلب موقف السيارة. الفندق لا يعرفها لحظة الحجز، لذلك لم يستخدمها النموذج.`,
-    `<b>أخطاء البيانات موثّقة.</b> استبعدنا ${fmt.int(Q.excluded)} حجزًا فقط فيها أخطاء واضحة، مثل ليلة بسعر 5,400 يورو أو حجز بلا ضيوف.`,
+    `<b>أخطاء البيانات موثّقة.</b> استبعدتُ ${fmt.int(Q.excluded)} حجزًا فقط فيها أخطاء واضحة، مثل ليلة بسعر 5,400 يورو أو حجز بلا ضيوف.`,
   ] : [
     `<b>Every number is checked automatically.</b> ${DBT.tests} checks run every time, and none fail. No booking is lost and no euro is counted twice, from the source file to this page.`,
     `<b>Tested on a year the model never saw.</b> The model learned from 2015–2016 and was tested on 2017. The risk cut-off (${fmt.pct(P.chosen_threshold)}) was also set using 2016 data only.`,
@@ -408,7 +408,7 @@ function renderText() {
 
   el("limits").innerHTML = (ar ? [
     "البيانات لفندقين في البرتغال بين 2015 و2017. الطريقة تصلح لأي فندق أو نشاط مشابه، أما الأرقام فتُحسب من بيانات كل نشاط.",
-    `عدد الضيوف الذين سيرفضون العربون افتراض، لأن البيانات لا تُظهره. الحالة الأساسية: ${fmt.pct(A.walkaway)} يرفضون، ويُعاد بيع ${fmt.pct(A.resale)} من الغرف المفقودة. لذلك عرضنا 12 احتمالًا. قبل التطبيق الكامل، جرّب التوصية على جزء من الحجوزات أولًا.`,
+    `عدد الضيوف الذين سيرفضون العربون افتراض، لأن البيانات لا تُظهره. الحالة الأساسية: ${fmt.pct(A.walkaway)} يرفضون، ويُعاد بيع ${fmt.pct(A.resale)} من الغرف المفقودة. لذلك عرضتُ 12 احتمالًا. قبل التطبيق الكامل، جرّب التوصية على جزء من الحجوزات أولًا.`,
     "الإيراد هنا هو إيراد الغرف فقط (سعر الليلة × عدد الليالي)، بدون المطعم أو الخدمات الأخرى.",
   ] : [
     "The data covers two hotels in Portugal, 2015–2017. The method works for any hotel or similar business; the numbers come from each business's own data.",
